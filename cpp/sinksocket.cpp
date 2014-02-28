@@ -177,6 +177,8 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 			tmp = inputPort->getPacket(0.0);
 			if (tmp)
 			{
+				if (tmp->inputQueueFlushed)
+					LOG_WARN(sinksocket_i, "input Q flushed - data has been thrown on the floor.");
 				newData(tmp->dataBuffer);
 				warn_<<"Got data from "<<inputPort->getName()<<".  ";
 			}
@@ -193,6 +195,8 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 			//LOG_INFO(sinksocket_i, "sink socket try get data");
 			if (tmp)
 			{
+				if (tmp->inputQueueFlushed)
+					LOG_WARN(sinksocket_i, "input Q flushed - data has been thrown on the floor.");
 				newData(tmp->dataBuffer);
 			}
 		}
