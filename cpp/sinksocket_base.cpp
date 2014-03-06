@@ -80,6 +80,14 @@ void sinksocket_base::start() throw (CORBA::SystemException, CF::Resource::Start
 {
     boost::mutex::scoped_lock lock(serviceThreadLock);
     if (serviceThread == 0) {
+        dataOctet_in->unblock();
+        dataChar_in->unblock();
+        dataShort_in->unblock();
+        dataUshort_in->unblock();
+        dataLong_in->unblock();
+        dataUlong_in->unblock();
+        dataFloat_in->unblock();
+        dataDouble_in->unblock();
         serviceThread = new ProcessThread<sinksocket_base>(this, 0.1);
         serviceThread->start();
     }
