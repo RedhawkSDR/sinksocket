@@ -37,8 +37,7 @@ public:
 	template<typename T>
 	int serviceFunctionT(T* inputPort);
 private:
-
-	void updateSocket(const std::string&);
+	void updateSocket();
 
 	template<typename T, typename U>
 	void sendData(std::vector<T, U>& outData);
@@ -53,6 +52,11 @@ private:
 	QuickStats stats_;
 	boost::recursive_mutex socketLock_;
 	std::stringstream warn_;
+
+	//Property Change Listeners
+	void connection_typeChanged(const std::string *oldValue, const std::string *newValue);
+	void ip_addressChanged(const std::string *oldValue, const std::string *newValue);
+	void portChanged(const unsigned short *oldValue, const unsigned short *newValue);
 };
 
 #endif

@@ -36,9 +36,9 @@ sinksocket_i::sinksocket_i(const char *uuid, const char *label) :
     server_(NULL),
     client_(NULL)
 {
-	setPropertyChangeListener("connection_type", this, &sinksocket_i::updateSocket);
-	setPropertyChangeListener("ip_address", this, &sinksocket_i::updateSocket);
-	setPropertyChangeListener("port", this, &sinksocket_i::updateSocket);
+	addPropertyChangeListener("connection_type", this, &sinksocket_i::connection_typeChanged);
+	addPropertyChangeListener("ip_address", this, &sinksocket_i::ip_addressChanged);
+	addPropertyChangeListener("port", this, &sinksocket_i::portChanged);
 	status = "initialize";
 	total_bytes=0;
 	bytes_per_sec=0;
@@ -52,6 +52,30 @@ sinksocket_i::~sinksocket_i()
 		delete server_;
 	if (client_)
 		delete client_;
+}
+
+void sinksocket_i::connection_typeChanged(const std::string *oldValue, const std::string *newValue)
+{
+	if (*oldValue != *newValue) {
+		boost::recursive_mutex::scoped_lock lock(socketLock_);
+		connection_type = *oldValue;
+	}
+}
+
+void sinksocket_i::ip_addressChanged(const std::string *oldValue, const std::string *newValue)
+{
+	if (*oldValue != *newValue) {
+		boost::recursive_mutex::scoped_lock lock(socketLock_);
+		ip_address = *oldValue;
+	}
+}
+
+void sinksocket_i::portChanged(const unsigned short *oldValue, const unsigned short *newValue)
+{
+	if (*oldValue != *newValue) {
+		boost::recursive_mutex::scoped_lock lock(socketLock_);
+		port = *oldValue;
+	}
 }
 
 int sinksocket_i::serviceFunction()
@@ -168,7 +192,7 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 
 	boost::recursive_mutex::scoped_lock lock(socketLock_);
 	if (server_==NULL && client_==NULL)
-		updateSocket("");
+		updateSocket();
 	if (server_)
 	{
 		if (server_->is_connected())
@@ -217,9 +241,8 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 	else
 		return NOOP;
 }
-void sinksocket_i::updateSocket(const std::string& id)
+void sinksocket_i::updateSocket()
 {
-	boost::recursive_mutex::scoped_lock lock(socketLock_);
 	if (client_)
 	{
 		delete client_;
