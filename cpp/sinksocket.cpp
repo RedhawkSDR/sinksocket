@@ -58,7 +58,7 @@ void sinksocket_i::connection_typeChanged(const std::string *oldValue, const std
 {
 	if (*oldValue != *newValue) {
 		boost::recursive_mutex::scoped_lock lock(socketLock_);
-		connection_type = *oldValue;
+		updateSocket();
 	}
 }
 
@@ -66,7 +66,7 @@ void sinksocket_i::ip_addressChanged(const std::string *oldValue, const std::str
 {
 	if (*oldValue != *newValue) {
 		boost::recursive_mutex::scoped_lock lock(socketLock_);
-		ip_address = *oldValue;
+		updateSocket();
 	}
 }
 
@@ -74,7 +74,7 @@ void sinksocket_i::portChanged(const unsigned short *oldValue, const unsigned sh
 {
 	if (*oldValue != *newValue) {
 		boost::recursive_mutex::scoped_lock lock(socketLock_);
-		port = *oldValue;
+		updateSocket();
 	}
 }
 

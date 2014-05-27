@@ -29,159 +29,64 @@
 
 sinksocket_base::sinksocket_base(const char *uuid, const char *label) :
     Resource_impl(uuid, label),
-    serviceThread(0)
+    ThreadedComponent()
 {
-    construct();
+    loadProperties();
+
+    dataOctet_in = new bulkio::InOctetPort("dataOctet_in");
+    addPort("dataOctet_in", dataOctet_in);
+    dataChar_in = new bulkio::InCharPort("dataChar_in");
+    addPort("dataChar_in", dataChar_in);
+    dataShort_in = new bulkio::InShortPort("dataShort_in");
+    addPort("dataShort_in", dataShort_in);
+    dataUshort_in = new bulkio::InUShortPort("dataUshort_in");
+    addPort("dataUshort_in", dataUshort_in);
+    dataLong_in = new bulkio::InLongPort("dataLong_in");
+    addPort("dataLong_in", dataLong_in);
+    dataUlong_in = new bulkio::InULongPort("dataUlong_in");
+    addPort("dataUlong_in", dataUlong_in);
+    dataFloat_in = new bulkio::InFloatPort("dataFloat_in");
+    addPort("dataFloat_in", dataFloat_in);
+    dataDouble_in = new bulkio::InDoublePort("dataDouble_in");
+    addPort("dataDouble_in", dataDouble_in);
 }
 
-void sinksocket_base::construct()
+sinksocket_base::~sinksocket_base()
 {
-    Resource_impl::_started = false;
-    loadProperties();
-    serviceThread = 0;
-    
-    PortableServer::ObjectId_var oid;
-    dataOctet_in = new bulkio::InOctetPort("dataOctet_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataOctet_in);
-    dataChar_in = new bulkio::InCharPort("dataChar_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataChar_in);
-    dataShort_in = new bulkio::InShortPort("dataShort_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataShort_in);
-    dataUshort_in = new bulkio::InUShortPort("dataUshort_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataUshort_in);
-    dataLong_in = new bulkio::InLongPort("dataLong_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataLong_in);
-    dataUlong_in = new bulkio::InULongPort("dataUlong_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataUlong_in);
-    dataFloat_in = new bulkio::InFloatPort("dataFloat_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataFloat_in);
-    dataDouble_in = new bulkio::InDoublePort("dataDouble_in");
-    oid = ossie::corba::RootPOA()->activate_object(dataDouble_in);
-
-    registerInPort(dataOctet_in);
-    registerInPort(dataChar_in);
-    registerInPort(dataShort_in);
-    registerInPort(dataUshort_in);
-    registerInPort(dataLong_in);
-    registerInPort(dataUlong_in);
-    registerInPort(dataFloat_in);
-    registerInPort(dataDouble_in);
+    delete dataOctet_in;
+    dataOctet_in = 0;
+    delete dataChar_in;
+    dataChar_in = 0;
+    delete dataShort_in;
+    dataShort_in = 0;
+    delete dataUshort_in;
+    dataUshort_in = 0;
+    delete dataLong_in;
+    dataLong_in = 0;
+    delete dataUlong_in;
+    dataUlong_in = 0;
+    delete dataFloat_in;
+    dataFloat_in = 0;
+    delete dataDouble_in;
+    dataDouble_in = 0;
 }
 
 /*******************************************************************************************
     Framework-level functions
     These functions are generally called by the framework to perform housekeeping.
 *******************************************************************************************/
-void sinksocket_base::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
-{
-}
-
 void sinksocket_base::start() throw (CORBA::SystemException, CF::Resource::StartError)
 {
-    boost::mutex::scoped_lock lock(serviceThreadLock);
-    if (serviceThread == 0) {
-        dataOctet_in->unblock();
-        dataChar_in->unblock();
-        dataShort_in->unblock();
-        dataUshort_in->unblock();
-        dataLong_in->unblock();
-        dataUlong_in->unblock();
-        dataFloat_in->unblock();
-        dataDouble_in->unblock();
-        serviceThread = new ProcessThread<sinksocket_base>(this, 0.1);
-        serviceThread->start();
-    }
-    
-    if (!Resource_impl::started()) {
-    	Resource_impl::start();
-    }
+    Resource_impl::start();
+    ThreadedComponent::startThread();
 }
 
 void sinksocket_base::stop() throw (CORBA::SystemException, CF::Resource::StopError)
 {
-    boost::mutex::scoped_lock lock(serviceThreadLock);
-    // release the child thread (if it exists)
-    if (serviceThread != 0) {
-        dataOctet_in->block();
-        dataChar_in->block();
-        dataShort_in->block();
-        dataUshort_in->block();
-        dataLong_in->block();
-        dataUlong_in->block();
-        dataFloat_in->block();
-        dataDouble_in->block();
-        if (!serviceThread->release(2)) {
-            throw CF::Resource::StopError(CF::CF_NOTSET, "Processing thread did not die");
-        }
-        serviceThread = 0;
+    Resource_impl::stop();
+    if (!ThreadedComponent::stopThread()) {
+        throw CF::Resource::StopError(CF::CF_NOTSET, "Processing thread did not die");
     }
-    
-    if (Resource_impl::started()) {
-    	Resource_impl::stop();
-    }
-}
-
-CORBA::Object_ptr sinksocket_base::getPort(const char* _id) throw (CORBA::SystemException, CF::PortSupplier::UnknownPort)
-{
-
-    std::map<std::string, Port_Provides_base_impl *>::iterator p_in = inPorts.find(std::string(_id));
-    if (p_in != inPorts.end()) {
-        if (!strcmp(_id,"dataOctet_in")) {
-            bulkio::InOctetPort *ptr = dynamic_cast<bulkio::InOctetPort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-        if (!strcmp(_id,"dataChar_in")) {
-            bulkio::InCharPort *ptr = dynamic_cast<bulkio::InCharPort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-        if (!strcmp(_id,"dataShort_in")) {
-            bulkio::InShortPort *ptr = dynamic_cast<bulkio::InShortPort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-        if (!strcmp(_id,"dataUshort_in")) {
-            bulkio::InUShortPort *ptr = dynamic_cast<bulkio::InUShortPort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-        if (!strcmp(_id,"dataLong_in")) {
-            bulkio::InLongPort *ptr = dynamic_cast<bulkio::InLongPort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-        if (!strcmp(_id,"dataUlong_in")) {
-            bulkio::InULongPort *ptr = dynamic_cast<bulkio::InULongPort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-        if (!strcmp(_id,"dataFloat_in")) {
-            bulkio::InFloatPort *ptr = dynamic_cast<bulkio::InFloatPort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-        if (!strcmp(_id,"dataDouble_in")) {
-            bulkio::InDoublePort *ptr = dynamic_cast<bulkio::InDoublePort *>(p_in->second);
-            if (ptr) {
-                return ptr->_this();
-            }
-        }
-    }
-
-    std::map<std::string, CF::Port_var>::iterator p_out = outPorts_var.find(std::string(_id));
-    if (p_out != outPorts_var.end()) {
-        return CF::Port::_duplicate(p_out->second);
-    }
-
-    throw (CF::PortSupplier::UnknownPort());
 }
 
 void sinksocket_base::releaseObject() throw (CORBA::SystemException, CF::LifeCycle::ReleaseError)
@@ -192,19 +97,6 @@ void sinksocket_base::releaseObject() throw (CORBA::SystemException, CF::LifeCyc
     } catch (CF::Resource::StopError& ex) {
         // TODO - this should probably be logged instead of ignored
     }
-
-    // deactivate ports
-    releaseInPorts();
-    releaseOutPorts();
-
-    delete(dataOctet_in);
-    delete(dataChar_in);
-    delete(dataShort_in);
-    delete(dataUshort_in);
-    delete(dataLong_in);
-    delete(dataUlong_in);
-    delete(dataFloat_in);
-    delete(dataDouble_in);
 
     Resource_impl::releaseObject();
 }
@@ -270,3 +162,5 @@ void sinksocket_base::loadProperties()
                 "configure");
 
 }
+
+
