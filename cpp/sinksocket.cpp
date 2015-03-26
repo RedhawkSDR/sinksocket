@@ -47,6 +47,7 @@ sinksocket_i::sinksocket_i(const char *uuid, const char *label) :
 
 	bytesPerSecTemp = 0;
 	bytes_per_sec = 0;
+	onlyByteSwaps = false;
 	performByteSwap = false;
 	totalBytesTemp = 0;
 	total_bytes = 0;
@@ -90,8 +91,8 @@ void sinksocket_i::createByteSwappedVector(const std::vector<T, U> &original, un
 		newLeftoverSize = 0;
 	}
 
+	//Don't have to deal with leftover data.  This should be the typical case
 	if (newLeftoverSize == 0 && oldLeftoverSize == 0) {
-		//Don't have to deal with leftover data.  This should be the typical case
 		if (numSwap > 1) {
 			newData.resize(numBytes);
 			vectorSwap(reinterpret_cast<const char *>(original.data()), newData, numSwap);
@@ -225,8 +226,9 @@ void sinksocket_i::ConnectionsChanged(const std::vector<Connection_struct> *oldV
 
 	boost::recursive_mutex::scoped_lock lock(socketsLock_);
 
-	// Reinitialize the performByteSwap member and then set it
-	// appropriately
+	// Reinitialize the onlyByteSwaps and performByteSwap members
+	// and then set them appropriately
+	onlyByteSwaps = false;
 	performByteSwap = false;
 
 	// Keep a list of stats to populate the ConnectionStats property
@@ -252,6 +254,15 @@ void sinksocket_i::ConnectionsChanged(const std::vector<Connection_struct> *oldV
 		}
 
 		stats.insert(stats.end(), returned.begin(), returned.end());
+
+		// Set the onlyByteSwaps flag if necessary
+		if (onlyByteSwaps) {
+			for (std::vector<unsigned short>::const_iterator j = i->byte_swap.begin(); j != i->byte_swap.end(); ++j) {
+				if (not (onlyByteSwaps &= (*j != 0))) {
+					break;
+				}
+			}
+		}
 
 		// Set the performByteSwap flag if necessary
 		if (not performByteSwap) {
@@ -328,25 +339,39 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 	// Avoid unnecessary processing and allocation if no byte swaps
 	// are being performed
 	if (performByteSwap) {
-		byteSwapped[typeid(packet->dataBuffer[0]).name()][0] = std::vector<char>(reinterpret_cast<char *>(packet->dataBuffer.data()),
-																				reinterpret_cast<char *>(packet->dataBuffer.data()) + packet->dataBuffer.size() * sizeof(packet->dataBuffer[0]));
+		// Use the data type as the key into the byteSwapped and
+		// leftovers member maps
+		std::string byteSwapKey = typeid(packet->dataBuffer[0]).name();
 
+		// This copy isn't necessary if all of the connections require
+		// byte swaps
+		if (not onlyByteSwaps) {
+			byteSwapped[byteSwapKey][0] = std::vector<char>(reinterpret_cast<char *>(packet->dataBuffer.data()),
+																				reinterpret_cast<char *>(packet->dataBuffer.data()) + packet->dataBuffer.size() * sizeof(packet->dataBuffer[0]));
+		}
+
+		// Iterate through the internal connections, building the byte
+		// swapped vectors as necessary.  This should prevent multiple
+		// byte swaps for the same byte swap values from being performed
 		for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
 			std::vector<unsigned short> byteSwaps = (*i)->getByteSwaps();
 
 			for (std::vector<unsigned short>::iterator j = byteSwaps.begin(); j != byteSwaps.end(); ++j) {
 				if (*j != 0) {
-					if (byteSwapped[typeid(packet->dataBuffer[0]).name()].find(*j) == byteSwapped[typeid(packet->dataBuffer[0]).name()].end()) {
+					if (byteSwapped[byteSwapKey].find(*j) == byteSwapped[byteSwapKey].end()) {
 						createByteSwappedVector(packet->dataBuffer, *j);
 					}
 				}
 			}
 
-			returned = (*i)->writeByteSwap(byteSwapped[typeid(packet->dataBuffer[0]).name()]);
+			returned = (*i)->writeByteSwap(byteSwapped[byteSwapKey]);
 
 			stats.insert(stats.end(), returned.begin(), returned.end());
 		}
+
+		byteSwapped[byteSwapKey].clear();
 	} else {
+		// Iterate through the internal connections and write the data buffer
 		for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
 			returned = (*i)->write(packet->dataBuffer);
 
@@ -354,6 +379,7 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 		}
 	}
 
+	// Update the properties
 	bytesPerSecTemp = 0;
 	totalBytesTemp = 0;
 

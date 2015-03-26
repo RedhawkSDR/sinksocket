@@ -1,7 +1,7 @@
-<!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- 
-     This file is protected by Copyright. Please refer to the COPYRIGHT file distributed with this 
-     source distribution.
+This file is protected by Copyright. Please refer to the COPYRIGHT file distributed with this 
+source distribution.
 
 This file is part of REDHAWK Basic Components sinksocket.
 
@@ -16,12 +16,13 @@ PURPOSE.  See the GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License along with this 
 program.  If not, see http://www.gnu.org/licenses/.
 -->
-<softpkg version="1.0.1" id="DCE:22596cfd-6056-4c47-80da-c757746262c4" name="sinksocket" type="sca_compliant">
-  <title/>
+<!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
+<softpkg id="DCE:22596cfd-6056-4c47-80da-c757746262c4" name="sinksocket" type="sca_compliant" version="2.0.0">
+  <title></title>
   <author>
     <name>null</name>
   </author>
-  <description>Reads data from a BULKIO port and writes it to a TCP socket.</description>
+  <description>Reads data from a BULKIO port and writes it to one or more TCP sockets.</description>
   <propertyfile type="PRF">
     <localfile name="sinksocket.prf.xml"/>
   </propertyfile>

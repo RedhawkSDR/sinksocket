@@ -48,11 +48,11 @@ private:
 	template<typename T, typename U>
 	void newData(std::vector<T, U>& newData);
 
-	std::map<std::string, std::map<unsigned short, std::vector<char> > > leftovers;
-	std::map<std::string, std::map<unsigned short, std::vector<char> > > byteSwapped;
-
 	float bytesPerSecTemp;
+	std::map<std::string, std::map<unsigned short, std::vector<char> > > byteSwapped;
 	std::vector<InternalConnection *> internalConnections;
+	std::map<std::string, std::map<unsigned short, std::vector<char> > > leftovers;
+	bool onlyByteSwaps;
 	bool performByteSwap;
 	boost::recursive_mutex socketsLock_;
 	double totalBytesTemp;
