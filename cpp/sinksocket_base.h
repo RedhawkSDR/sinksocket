@@ -1,30 +1,14 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file distributed with this
- * source distribution.
- *
- * This file is part of REDHAWK Basic Components sinksocket.
- *
- * REDHAWK Basic Components sinksocket is free software: you can redistribute it and/or modify it under the terms of
- * the GNU Lesser General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * REDHAWK Basic Components sinksocket is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with this
- * program.  If not, see http://www.gnu.org/licenses/.
- */
-#ifndef SINKSOCKET_IMPL_BASE_H
-#define SINKSOCKET_IMPL_BASE_H
+#ifndef SINKSOCKET_BASE_IMPL_BASE_H
+#define SINKSOCKET_BASE_IMPL_BASE_H
 
 #include <boost/thread.hpp>
-#include <ossie/Resource_impl.h>
+#include <ossie/Component.h>
 #include <ossie/ThreadedComponent.h>
 
 #include <bulkio/bulkio.h>
+#include "struct_props.h"
 
-class sinksocket_base : public Resource_impl, protected ThreadedComponent
+class sinksocket_base : public Component, protected ThreadedComponent
 {
     public:
         sinksocket_base(const char *uuid, const char *label);
@@ -40,13 +24,10 @@ class sinksocket_base : public Resource_impl, protected ThreadedComponent
 
     protected:
         // Member variables exposed as properties
-        std::string connection_type;
-        std::string ip_address;
-        unsigned short port;
-        std::string status;
         double total_bytes;
         float bytes_per_sec;
-        unsigned short byte_swap;
+        std::vector<Connection_struct> Connections;
+        std::vector<ConnectionStat_struct> ConnectionStats;
 
         // Ports
         bulkio::InOctetPort *dataOctet_in;
@@ -60,4 +41,4 @@ class sinksocket_base : public Resource_impl, protected ThreadedComponent
 
     private:
 };
-#endif // SINKSOCKET_IMPL_BASE_H
+#endif // SINKSOCKET_BASE_IMPL_BASE_H

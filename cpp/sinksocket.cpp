@@ -29,59 +29,264 @@
 #include "vectorswap.h"
 #include <sstream>
 
+// Because the vector of internal connections must store pointers to avoid
+// reconnecting whenever the vector is resized, this operator must be
+// defined to search the vector.  In C++, move semantics could be used
+// and the pointers would be unnecessary
+bool operator==(const InternalConnection *lhs, const Connection_struct &rhs)
+{
+	return (*lhs) == rhs;
+}
+
 PREPARE_LOGGING(sinksocket_i)
 
 sinksocket_i::sinksocket_i(const char *uuid, const char *label) :
-    sinksocket_base(uuid, label),
-    server_(NULL),
-    client_(NULL)
+    sinksocket_base(uuid, label)
 {
-	addPropertyChangeListener("connection_type", this, &sinksocket_i::connection_typeChanged);
-	addPropertyChangeListener("ip_address", this, &sinksocket_i::ip_addressChanged);
-	addPropertyChangeListener("port", this, &sinksocket_i::portChanged);
-	status = "initialize";
-	total_bytes=0;
-	bytes_per_sec=0;
+	addPropertyChangeListener("Connections", this, &sinksocket_i::ConnectionsChanged);
+
+	bytesPerSecTemp = 0;
+	bytes_per_sec = 0;
+	performByteSwap = false;
+	totalBytesTemp = 0;
+	total_bytes = 0;
 }
 
 sinksocket_i::~sinksocket_i()
 {
-	boost::recursive_mutex::scoped_lock lock(socketLock_);
-	status = "deleted";
-	if (server_)
-		delete server_;
-	if (client_)
-		delete client_;
-}
+	boost::recursive_mutex::scoped_lock lock(socketsLock_);
 
-void sinksocket_i::connection_typeChanged(const std::string *oldValue, const std::string *newValue)
-{
-	if (*oldValue != *newValue) {
-		boost::recursive_mutex::scoped_lock lock(socketLock_);
-		updateSocket();
+	for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
+		delete *i;
 	}
 }
 
-void sinksocket_i::ip_addressChanged(const std::string *oldValue, const std::string *newValue)
-{
-	if (*oldValue != *newValue) {
-		boost::recursive_mutex::scoped_lock lock(socketLock_);
-		updateSocket();
+template<typename T, typename U>
+void sinksocket_i::createByteSwappedVector(const std::vector<T, U> &original, unsigned short byteSwap) {
+	unsigned int numSwap = byteSwap;
+	size_t dataSize = sizeof(T);
+
+	// If 1 is requested, use the word size associated with the data
+	if (numSwap == 1) {
+		numSwap = dataSize;
+	}
+
+	size_t numBytes = original.size() * dataSize;
+	size_t oldLeftoverSize = leftovers[typeid(T).name()][byteSwap].size();
+	size_t totalSize = numBytes + oldLeftoverSize;
+	size_t newLeftoverSize;
+
+	// Create the vector to hold the swapped data
+	std::vector<char> newData;
+
+	// Make sure to send an exact multiple of numSwap if it's greater than 1
+	if (numSwap > 1) {
+		newLeftoverSize = totalSize % numSwap;
+
+		if (numSwap != dataSize) {
+			LOG_WARN(sinksocket_i, "Data size of " << dataSize << " is not equal to byte swap size  of " << numSwap <<".");
+		}
+	} else {
+		newLeftoverSize = 0;
+	}
+
+	if (newLeftoverSize == 0 && oldLeftoverSize == 0) {
+		//Don't have to deal with leftover data.  This should be the typical case
+		if (numSwap > 1) {
+			newData.resize(numBytes);
+			vectorSwap(reinterpret_cast<const char *>(original.data()), newData, numSwap);
+			byteSwapped[typeid(original[0]).name()][byteSwap] = newData;
+		}
+	}
+	else
+	{
+		LOG_WARN(sinksocket_i, "Byte swapping and packet sizes are not compatible.  Swapping bytes over adjacent packets");
+
+		newData.resize(totalSize - newLeftoverSize);
+		newData.insert(newData.begin(), leftovers[typeid(T).name()][byteSwap].begin(), leftovers[typeid(T).name()][byteSwap].end());
+		newData.insert(newData.end(), original.begin(), original.end() - newLeftoverSize);
+
+		if (numSwap > 1) {
+			vectorSwap(newData, numSwap);
+		}
+
+		byteSwapped[typeid(original[0]).name()][byteSwap] = newData;
+
+		// If we have new leftovers, populate it now
+		if (newLeftoverSize != 0) {
+			leftovers[typeid(T).name()][byteSwap].resize(newLeftoverSize);
+			leftovers[typeid(T).name()][byteSwap].insert(leftovers[typeid(T).name()][byteSwap].begin(), original.end() - newLeftoverSize, original.end());
+		} else {
+			leftovers[typeid(T).name()][byteSwap].clear();
+		}
 	}
 }
 
-void sinksocket_i::portChanged(const unsigned short *oldValue, const unsigned short *newValue)
+void sinksocket_i::ConnectionsChanged(const std::vector<Connection_struct> *oldValue, const std::vector<Connection_struct> *newValue)
 {
-	if (*oldValue != *newValue) {
-		boost::recursive_mutex::scoped_lock lock(socketLock_);
-		updateSocket();
+	// First, clear out any server IP addresses and make sure the byte
+	// swap and port lists are the same size
+	std::vector<Connection_struct> cleanList;
+
+	for (std::vector<Connection_struct>::const_iterator i = newValue->begin(); i != newValue->end(); ++i) {
+		Connection_struct cleaned = *i;
+
+		// Adjust the byte swap size to match the number of ports
+		if (cleaned.ports.size() != cleaned.byte_swap.size()) {
+			LOG_WARN(sinksocket_i, "Port list and Byte Swap list differ in size, resizing");
+
+			cleaned.byte_swap.resize(cleaned.ports.size(), 0);
+		}
+
+		// Remove the IP address for a server connection
+		if (cleaned.connection_type == "server" && cleaned.ip_address != "") {
+			LOG_WARN(sinksocket_i, "IP Address specified for server connection, removing");
+
+			cleaned.ip_address = "";
+		}
+
+		cleanList.push_back(cleaned);
 	}
+
+	// Now coalesce any servers or clients with duplicate information
+	std::vector<Connection_struct> duplicateFree;
+
+	for (std::vector<Connection_struct>::const_iterator i = cleanList.begin(); i != cleanList.end(); ++i) {
+		bool found = false;
+		std::vector<Connection_struct>::iterator j;
+
+		// Check if the duplicate list already contains an entry with
+		// a matching connection type and IP
+		for (j = duplicateFree.begin(); j != duplicateFree.end(); ++j) {
+			if (i->connection_type == j->connection_type && i->ip_address == j->ip_address) {
+				found = true;
+				break;
+			}
+		}
+
+		// Augment the existing entry to contain the new data
+		if (found) {
+			Connection_struct combined;
+
+			combined.connection_type = j->connection_type;
+			combined.ip_address = j->ip_address;
+
+			// Vectors used for combining and preserving the order
+			// of the ports and byte swaps lists
+			std::vector<unsigned short> newPorts;
+			std::vector<unsigned short> oldPorts;
+			std::vector<unsigned short> newByteSwaps;
+			std::vector<unsigned short> oldByteSwaps;
+
+			oldPorts.insert(oldPorts.end(), i->ports.begin(), i->ports.end());
+			oldPorts.insert(oldPorts.end(), j->ports.begin(), j->ports.end());
+			oldByteSwaps.insert(oldByteSwaps.end(), i->byte_swap.begin(), i->byte_swap.end());
+			oldByteSwaps.insert(oldByteSwaps.end(), j->byte_swap.begin(), j->byte_swap.end());
+
+			while (oldPorts.size() != 0) {
+				int counter = 0;
+				unsigned int minSoFar = 65536;
+				std::vector<unsigned short>::iterator minPort;
+				std::vector<unsigned short>::iterator correspondingByteSwap;
+
+				// Search for the minimum port in the current list and
+				// make note of its position and the position of its
+				// corresponding byte_swap value
+				for (std::vector<unsigned short>::iterator i = oldPorts.begin(); i != oldPorts.end(); ++i, ++counter) {
+					if (*i < minSoFar) {
+						minSoFar = *i;
+						minPort = i;
+						correspondingByteSwap = oldByteSwaps.begin() + counter;
+					}
+				}
+
+				// Add the port and byte swap values to the new vectors
+				newPorts.insert(newPorts.end(), *minPort);
+				newByteSwaps.insert(newByteSwaps.end(), *correspondingByteSwap);
+
+				// Remove the port and byte swap values from the old vectors
+				oldPorts.erase(minPort);
+				oldByteSwaps.erase(correspondingByteSwap);
+			}
+
+			// Set the entry's values
+			combined.ports = newPorts;
+			combined.byte_swap = newByteSwaps;
+
+			*j = combined;
+		} else {
+			// A matching entry wasn't found, add it to the back of the list
+			duplicateFree.push_back(*i);
+		}
+	}
+
+	// Set the property to match the clean and duplicate free version
+	Connections = duplicateFree;
+
+	boost::recursive_mutex::scoped_lock lock(socketsLock_);
+
+	// Reinitialize the performByteSwap member and then set it
+	// appropriately
+	performByteSwap = false;
+
+	// Keep a list of stats to populate the ConnectionStats property
+	std::vector<ConnectionStat_struct> stats;
+	std::vector<ConnectionStat_struct> returned;
+
+	// Add and update the current connections
+	for (std::vector<Connection_struct>::const_iterator i = duplicateFree.begin(); i != duplicateFree.end(); ++i) {
+		std::vector<InternalConnection *>::iterator found = find(internalConnections.begin(), internalConnections.end(), *i);
+
+		// This is a brand new connection
+		if (found == internalConnections.end()) {
+			LOG_DEBUG(sinksocket_i, "Adding new internal connection");
+			internalConnections.push_back(new InternalConnection());
+
+			returned = internalConnections.back()->setConnection(*i);
+		} else {
+			LOG_DEBUG(sinksocket_i, "Updating existing internal connection");
+			// A connection with this same connection type and IP exists
+			// so only update the relevant information to preserve
+			// existing connections
+			returned = (*found)->setConnection(*i);
+		}
+
+		stats.insert(stats.end(), returned.begin(), returned.end());
+
+		// Set the performByteSwap flag if necessary
+		if (not performByteSwap) {
+			for (std::vector<unsigned short>::const_iterator j = i->byte_swap.begin(); j != i->byte_swap.end(); ++j) {
+				if ((performByteSwap |= (*j != 0))) {
+					break;
+				}
+			}
+		}
+	}
+
+	// Remove from the current connections
+	for (std::vector<Connection_struct>::const_iterator i = oldValue->begin(); i != oldValue->end(); ++i) {
+		// If the value exists in the old property but not in the duplicate
+		// free version, it has been removed
+		if (find(duplicateFree.begin(), duplicateFree.end(), *i) == duplicateFree.end()) {
+			std::vector<InternalConnection *>::iterator found = find(internalConnections.begin(), internalConnections.end(), *i);
+
+			// If found, delete and remove the entry
+			if (found != internalConnections.end()) {
+				delete *found;
+				internalConnections.erase(found);
+			} else {
+				LOG_ERROR(sinksocket_i, "Unable to find connection data for removal");
+			}
+		}
+	}
+
+	ConnectionStats = stats;
 }
 
 int sinksocket_i::serviceFunction()
 {
 	  int ret = 0;
-	  warn_.clear();
+
 	  ret += serviceFunctionT(dataOctet_in);
 	  ret += serviceFunctionT(dataChar_in);
 	  ret += serviceFunctionT(dataShort_in);
@@ -90,221 +295,80 @@ int sinksocket_i::serviceFunction()
 	  ret += serviceFunctionT(dataUlong_in);
 	  ret += serviceFunctionT(dataFloat_in);
 	  ret += serviceFunctionT(dataDouble_in);
+
 	  if (ret > 1)
 	  {
-		  LOG_WARN(sinksocket_i, "More than one data port received data.  " +  warn_.str());
+		  LOG_WARN(sinksocket_i, "More than one data port received data");
 	  	  return NORMAL;
 	  }
+
 	  return ret;
-}
-
-template<typename T, typename U>
-void sinksocket_i::newData(std::vector<T, U>& newData)
-{
-	unsigned int numSwap = byte_swap;
-	size_t dataSize = sizeof(T);
-	//if 1 is requested - do the word size associated with the data
-	if (numSwap==1)
-		numSwap = dataSize;
-
-	size_t numBytes =newData.size()*dataSize;
-	size_t oldSize = leftover_.size();
-	size_t totalSize = numBytes+oldSize;
-
-	size_t newLeftoverSize;
-	//make sure you send an exact mutlple of numSwap if its greater than 0
-	if (numSwap > 1)
-	{
-		newLeftoverSize = totalSize %(numSwap);
-		if (numSwap !=dataSize)
-		{
-			std::stringstream ss;
-			ss<<"data size "<<dataSize<<" is not equal to byte swap size "<< numSwap<<". ";
-			LOG_WARN(sinksocket_i, ss.str());
-		}
-	}
-	else
-		newLeftoverSize = 0;
-
-	if (newLeftoverSize ==0 && oldSize==0)
-	{
-		//don't have to deal with leftover data -- this should be the typical case
-		if (numSwap>1)
-			vectorSwap(newData, numSwap);
-		sendData(newData);
-	}
-	else
-	{
-		LOG_WARN(sinksocket_i, "Byte swapping and packet sizes are not compatible.  Swapping bytes over adjacent packets");
-		//copy the right ammount of data into leftover_
-		size_t outSize =totalSize - newLeftoverSize;
-		size_t numCopy =outSize-oldSize;
-		leftover_.resize(outSize);
-		memcpy(&leftover_[oldSize], &newData[0], numCopy);
-		if (numSwap>1)
-			vectorSwap(leftover_, numSwap);
-		//send the leftover
-		sendData(leftover_);
-		//if we have new leftover - populate it now
-		if (newLeftoverSize!=0)
-		{
-			leftover_.resize(newLeftoverSize);
-			memcpy(&leftover_[0], reinterpret_cast<char*>(&newData[0])+numCopy, newLeftoverSize);
-		}
-		else
-			leftover_.clear();
-	}
-}
-
-template<typename T, typename U>
-void sinksocket_i::sendData(std::vector<T, U>& outData)
-{
-	//we should only get into this loop if we are already connected
-	bool sentData=true;
-	if (server_ && server_->is_connected())
-		server_->write(outData);
-	else if (client_ && client_->connect_if_necessary())
-		client_->write(outData);
-	else
-		sentData=false;
-	if (sentData)
-	{
-		size_t pktSize=outData.size()*sizeof(T);
-
-		std::stringstream ss;
-		ss<<"Sent " << pktSize<< " bytes";
-		LOG_DEBUG(sinksocket_i, ss.str());
-
-		bytes_per_sec = stats_.newPacket(pktSize);
-		total_bytes+=pktSize;
-	}
-	else
-		LOG_ERROR(sinksocket_i, "server and client are both not ready.  Let the data on the floor -- let the data hit the floor");
-
-
 }
 
 template<typename T>
 int sinksocket_i::serviceFunctionT(T* inputPort)
 {
-	LOG_DEBUG(sinksocket_i, "serviceFunction() example log message");
-	typename T::dataTransfer *tmp=NULL;
+	LOG_TRACE(sinksocket_i, __PRETTY_FUNCTION__);
+	typename T::dataTransfer *packet = inputPort->getPacket(0.0);
 
-	boost::recursive_mutex::scoped_lock lock(socketLock_);
-	if (server_==NULL && client_==NULL)
-		updateSocket();
-	if (server_)
-	{
-		if (server_->is_connected())
-		{
-			status = "connected";
-			tmp = inputPort->getPacket(0.0);
-			if (tmp)
-			{
-				if (tmp->inputQueueFlushed)
-					LOG_WARN(sinksocket_i, "input queue flushed - data has been thrown on the floor.");
-				newData(tmp->dataBuffer);
-				warn_<<"Got data from "<<inputPort->getName()<<".  ";
-			}
-		}
-		else
-			status = "disconnected";
-	}
-	else if (client_)
-	{
-		if (client_->connect_if_necessary())
-		{
-			status = "connected";
-			tmp = inputPort->getPacket(0.0);
-			//LOG_INFO(sinksocket_i, "sink socket try get data");
-			if (tmp)
-			{
-				if (tmp->inputQueueFlushed)
-					LOG_WARN(sinksocket_i, "input queue flushed - data has been thrown on the floor.");
-				newData(tmp->dataBuffer);
-			}
-		}
-		else
-			status = "disconnected";
-	}
-	else
-	{
-		status="error";
-		LOG_ERROR(sinksocket_i, "no server or client initialized");
-	}
-
-	if (tmp)
-	{
-		delete tmp;
-		return NORMAL;
-	}
-	else
+	if (not packet) {
 		return NOOP;
-}
-void sinksocket_i::updateSocket()
-{
-	if (client_)
-	{
-		delete client_;
-		client_=NULL;
-	}
-	if (server_)
-	{
-		delete server_;
-		server_=NULL;
 	}
 
-	if (connection_type=="server" && port > 0)
-	{
-		try
-		{
-			server_ = new server(port);
-			if (server_->is_connected())
-				status = "connected";
-			else
-				status = "disconnected";
-		}
-		catch (std::exception& e)
-		{
-			if (server_)
-			{
-				delete server_;
-				server_=NULL;
+	if (packet->inputQueueFlushed) {
+		LOG_WARN(sinksocket_i, "Input Queue Flushed");
+	}
+
+	boost::recursive_mutex::scoped_lock lock(socketsLock_);
+
+	// Keep a list of stats to populate the ConnectionStats property
+	std::vector<ConnectionStat_struct> stats;
+	std::vector<ConnectionStat_struct> returned;
+
+	// Avoid unnecessary processing and allocation if no byte swaps
+	// are being performed
+	if (performByteSwap) {
+		byteSwapped[typeid(packet->dataBuffer[0]).name()][0] = std::vector<char>(reinterpret_cast<char *>(packet->dataBuffer.data()),
+																				reinterpret_cast<char *>(packet->dataBuffer.data()) + packet->dataBuffer.size() * sizeof(packet->dataBuffer[0]));
+
+		for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
+			std::vector<unsigned short> byteSwaps = (*i)->getByteSwaps();
+
+			for (std::vector<unsigned short>::iterator j = byteSwaps.begin(); j != byteSwaps.end(); ++j) {
+				if (*j != 0) {
+					if (byteSwapped[typeid(packet->dataBuffer[0]).name()].find(*j) == byteSwapped[typeid(packet->dataBuffer[0]).name()].end()) {
+						createByteSwappedVector(packet->dataBuffer, *j);
+					}
+				}
 			}
-			LOG_ERROR(sinksocket_i, "error starting server " +std::string(e.what()));
-		}
-		std::stringstream ss;
-		ss<<"set as SERVER :";
-		ss<<port;
-		LOG_INFO(sinksocket_i, ss.str())
-	}
-	else if (connection_type=="client" && port > 0 && !ip_address.empty())
-	{
-		try
-		{
-			client_ = new client(port, ip_address);
-			bool connectionStatus = client_->connect();
-			if (connectionStatus)
-				status = "connected";
-			else
-				status = "disconnected";
-			std::stringstream ss;
-			ss<<"set as CLIENT " + ip_address + ":";
-			ss<<port;
-			LOG_INFO(sinksocket_i, ss.str())
-		}
-		catch (std::exception& e)
-		{
-			LOG_ERROR(sinksocket_i, "error starting client " +std::string(e.what()));
-		}
 
+			returned = (*i)->writeByteSwap(byteSwapped[typeid(packet->dataBuffer[0]).name()]);
+
+			stats.insert(stats.end(), returned.begin(), returned.end());
+		}
+	} else {
+		for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
+			returned = (*i)->write(packet->dataBuffer);
+
+			stats.insert(stats.end(), returned.begin(), returned.end());
+		}
 	}
-	else
-	{
-		std::stringstream ss;
-		ss<<"Bad connection parameters - " + connection_type + " " + ip_address + ":";
-		ss<<port;
-		LOG_ERROR(sinksocket_i, ss.str());
-		status = "disconnected";
+
+	bytesPerSecTemp = 0;
+	totalBytesTemp = 0;
+
+	for (std::vector<ConnectionStat_struct>::const_iterator i = stats.begin(); i != stats.end(); ++i) {
+		bytesPerSecTemp += i->bytes_per_second;
+		totalBytesTemp += i->bytes_sent;
 	}
+
+	bytes_per_sec = bytesPerSecTemp;
+	ConnectionStats = stats;
+	total_bytes = totalBytesTemp;
+
+	if (packet) {
+		delete packet;
+	}
+
+	return NORMAL;
 }

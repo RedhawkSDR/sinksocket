@@ -1,20 +1,3 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file distributed with this
- * source distribution.
- *
- * This file is part of REDHAWK Basic Components sinksocket.
- *
- * REDHAWK Basic Components sinksocket is free software: you can redistribute it and/or modify it under the terms of
- * the GNU Lesser General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * REDHAWK Basic Components sinksocket is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with this
- * program.  If not, see http://www.gnu.org/licenses/.
- */
 #include "sinksocket_base.h"
 
 /*******************************************************************************************
@@ -28,7 +11,7 @@
 ******************************************************************************************/
 
 sinksocket_base::sinksocket_base(const char *uuid, const char *label) :
-    Resource_impl(uuid, label),
+    Component(uuid, label),
     ThreadedComponent()
 {
     loadProperties();
@@ -77,13 +60,13 @@ sinksocket_base::~sinksocket_base()
 *******************************************************************************************/
 void sinksocket_base::start() throw (CORBA::SystemException, CF::Resource::StartError)
 {
-    Resource_impl::start();
+    Component::start();
     ThreadedComponent::startThread();
 }
 
 void sinksocket_base::stop() throw (CORBA::SystemException, CF::Resource::StopError)
 {
-    Resource_impl::stop();
+    Component::stop();
     if (!ThreadedComponent::stopThread()) {
         throw CF::Resource::StopError(CF::CF_NOTSET, "Processing thread did not die");
     }
@@ -98,45 +81,13 @@ void sinksocket_base::releaseObject() throw (CORBA::SystemException, CF::LifeCyc
         // TODO - this should probably be logged instead of ignored
     }
 
-    Resource_impl::releaseObject();
+    Component::releaseObject();
 }
 
 void sinksocket_base::loadProperties()
 {
-    addProperty(connection_type,
-                "server",
-                "connection_type",
-                "",
-                "readwrite",
-                "",
-                "external",
-                "configure");
-
-    addProperty(ip_address,
-                "ip_address",
-                "",
-                "readwrite",
-                "",
-                "external",
-                "configure");
-
-    addProperty(port,
-                "port",
-                "",
-                "readwrite",
-                "",
-                "external",
-                "configure");
-
-    addProperty(status,
-                "status",
-                "",
-                "readonly",
-                "",
-                "external",
-                "configure");
-
     addProperty(total_bytes,
+                0,
                 "total_bytes",
                 "",
                 "readonly",
@@ -145,18 +96,26 @@ void sinksocket_base::loadProperties()
                 "configure");
 
     addProperty(bytes_per_sec,
+                0,
                 "bytes_per_sec",
                 "",
                 "readonly",
+                "BpsS",
+                "external",
+                "configure");
+
+    addProperty(Connections,
+                "Connections",
+                "",
+                "readwrite",
                 "",
                 "external",
                 "configure");
 
-    addProperty(byte_swap,
-                0,
-                "byte_swap",
+    addProperty(ConnectionStats,
+                "ConnectionStats",
                 "",
-                "readwrite",
+                "readonly",
                 "",
                 "external",
                 "configure");

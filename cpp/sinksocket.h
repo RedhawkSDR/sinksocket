@@ -22,7 +22,9 @@
 #include "sinksocket_base.h"
 #include "BoostClient.h"
 #include "BoostServer.h"
+#include "InternalConnection.h"
 #include "quickstats.h"
+
 #include <vector>
 
 class sinksocket_i;
@@ -37,7 +39,8 @@ public:
 	template<typename T>
 	int serviceFunctionT(T* inputPort);
 private:
-	void updateSocket();
+	template<typename T, typename U>
+	void createByteSwappedVector(const std::vector<T, U> &original, unsigned short byteSwap);
 
 	template<typename T, typename U>
 	void sendData(std::vector<T, U>& outData);
@@ -45,18 +48,17 @@ private:
 	template<typename T, typename U>
 	void newData(std::vector<T, U>& newData);
 
-	std::vector<char> leftover_;
+	std::map<std::string, std::map<unsigned short, std::vector<char> > > leftovers;
+	std::map<std::string, std::map<unsigned short, std::vector<char> > > byteSwapped;
 
-	server* server_;
-	client* client_;
-	QuickStats stats_;
-	boost::recursive_mutex socketLock_;
-	std::stringstream warn_;
+	float bytesPerSecTemp;
+	std::vector<InternalConnection *> internalConnections;
+	bool performByteSwap;
+	boost::recursive_mutex socketsLock_;
+	double totalBytesTemp;
 
-	//Property Change Listeners
-	void connection_typeChanged(const std::string *oldValue, const std::string *newValue);
-	void ip_addressChanged(const std::string *oldValue, const std::string *newValue);
-	void portChanged(const unsigned short *oldValue, const unsigned short *newValue);
+	//Property Change Listener
+	void ConnectionsChanged(const std::vector<Connection_struct> *oldValue, const std::vector<Connection_struct> *newValue);
 };
 
 #endif

@@ -73,7 +73,7 @@ template<typename T, typename U> void vectorSwap(std::vector<T, U>& dataVec, con
 }
 
 //non in place vector byte swap
-template<typename T, typename U> void vectorSwap(char* data, std::vector<T, U>& outVec, const unsigned char numBytes)
+template<typename T, typename U> void vectorSwap(const char* data, std::vector<T, U>& outVec, const unsigned char numBytes)
 {
 	if (numBytes>1)
 	{
@@ -82,7 +82,7 @@ template<typename T, typename U> void vectorSwap(char* data, std::vector<T, U>& 
 		size_t numSwap = totalBytes/numBytes;
 		if (numBytes==2)
 		{
-			unsigned short* from = reinterpret_cast< unsigned short* >(data);
+			const unsigned short* from = reinterpret_cast<const unsigned short* >(data);
 			unsigned short* to = reinterpret_cast< unsigned short* >(&outVec[0]);
 			for (size_t i=0; i!=numSwap; i++)
 			{
@@ -92,7 +92,7 @@ template<typename T, typename U> void vectorSwap(char* data, std::vector<T, U>& 
 			}
 		} else if (numBytes==4)
 		{
-			unsigned int* from = reinterpret_cast< unsigned int* >(data);
+			const unsigned int* from = reinterpret_cast<const unsigned int* >(data);
 			unsigned int* to = reinterpret_cast< unsigned int* >(&outVec[0]);
 			for (size_t i=0; i!=numSwap; i++)
 			{
@@ -102,7 +102,7 @@ template<typename T, typename U> void vectorSwap(char* data, std::vector<T, U>& 
 			}
 		} else if(numBytes==8)
 		{
-			unsigned long* from = reinterpret_cast< unsigned long* >(data);
+			const unsigned long* from = reinterpret_cast<const unsigned long* >(data);
 			unsigned long* to = reinterpret_cast< unsigned long* >(&outVec[0]);
 			for (size_t i=0; i!=numSwap; i++)
 			{
@@ -113,8 +113,8 @@ template<typename T, typename U> void vectorSwap(char* data, std::vector<T, U>& 
 		}else
 		{
 			//explicitly swap all the bytes out by hand if we don't have a good optimized macro available for us
-			char* next = reinterpret_cast< char* >(data);
-			char* first;
+			const char* next = reinterpret_cast<const char* >(data);
+			const char* first;
 			char* to = reinterpret_cast< char* >(&outVec[0]);
 			for (size_t i=0; i!=numSwap; i++)
 			{
