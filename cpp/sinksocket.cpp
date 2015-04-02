@@ -96,29 +96,27 @@ void sinksocket_i::createByteSwappedVector(const std::vector<T, U> &original, un
 		if (numSwap > 1) {
 			newData.resize(numBytes);
 			vectorSwap(reinterpret_cast<const char *>(original.data()), newData, numSwap);
-			byteSwapped[typeid(original[0]).name()][byteSwap] = newData;
+			byteSwapped[typeid(T).name()][byteSwap] = newData;
 		}
 	}
 	else
 	{
 		LOG_WARN(sinksocket_i, "Byte swapping and packet sizes are not compatible.  Swapping bytes over adjacent packets");
 
-		newData.resize(totalSize - newLeftoverSize);
+		newData.reserve(totalSize - newLeftoverSize);
 		newData.insert(newData.begin(), leftovers[typeid(T).name()][byteSwap].begin(), leftovers[typeid(T).name()][byteSwap].end());
-		newData.insert(newData.end(), original.begin(), original.end() - newLeftoverSize);
+		newData.insert(newData.begin() + oldLeftoverSize, reinterpret_cast<const char *>(original.data()), reinterpret_cast<const char *>(original.data()) + numBytes - newLeftoverSize);
 
 		if (numSwap > 1) {
 			vectorSwap(newData, numSwap);
 		}
 
-		byteSwapped[typeid(original[0]).name()][byteSwap] = newData;
+		byteSwapped[typeid(T).name()][byteSwap] = newData;
+		leftovers[typeid(T).name()][byteSwap].clear();
 
 		// If we have new leftovers, populate it now
 		if (newLeftoverSize != 0) {
-			leftovers[typeid(T).name()][byteSwap].resize(newLeftoverSize);
-			leftovers[typeid(T).name()][byteSwap].insert(leftovers[typeid(T).name()][byteSwap].begin(), original.end() - newLeftoverSize, original.end());
-		} else {
-			leftovers[typeid(T).name()][byteSwap].clear();
+			leftovers[typeid(T).name()][byteSwap].insert(leftovers[typeid(T).name()][byteSwap].begin(), reinterpret_cast<const char *>(original.data()) + numBytes - newLeftoverSize, reinterpret_cast<const char *>(original.data()) + numBytes);
 		}
 	}
 }
@@ -228,7 +226,7 @@ void sinksocket_i::ConnectionsChanged(const std::vector<Connection_struct> *oldV
 
 	// Reinitialize the onlyByteSwaps and performByteSwap members
 	// and then set them appropriately
-	onlyByteSwaps = false;
+	onlyByteSwaps = true;
 	performByteSwap = false;
 
 	// Keep a list of stats to populate the ConnectionStats property
@@ -353,10 +351,12 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 		// Iterate through the internal connections, building the byte
 		// swapped vectors as necessary.  This should prevent multiple
 		// byte swaps for the same byte swap values from being performed
+		// in the same service function call
 		for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
 			std::vector<unsigned short> byteSwaps = (*i)->getByteSwaps();
 
 			for (std::vector<unsigned short>::iterator j = byteSwaps.begin(); j != byteSwaps.end(); ++j) {
+
 				if (*j != 0) {
 					if (byteSwapped[byteSwapKey].find(*j) == byteSwapped[byteSwapKey].end()) {
 						createByteSwappedVector(packet->dataBuffer, *j);
@@ -371,6 +371,7 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 
 		byteSwapped[byteSwapKey].clear();
 	} else {
+
 		// Iterate through the internal connections and write the data buffer
 		for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
 			returned = (*i)->write(packet->dataBuffer);

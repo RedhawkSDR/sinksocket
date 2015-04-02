@@ -45,6 +45,7 @@ program.  If not, see http://www.gnu.org/licenses/.
       </simple>
       <simple id="Connection::ip_address" name="ip_address" type="string">
         <description>IP address to connect to in client mode.  This value is ignored in server mode.</description>
+        <value></value>
       </simple>
       <simplesequence id="Connection::byte_swap" name="byte_swap" type="ushort">
         <description>Swap Bytes in data stream.  You can explicitly set the word size.  
@@ -52,9 +53,15 @@ If you set 0 -- no swapping is done.
 If you set 1 -- swapping is done according to the data size for each port
 Otherwise data will be swapped according to this value
         </description>
+        <values>
+          <value>0</value>
+        </values>
       </simplesequence>
       <simplesequence id="Connection::ports" name="ports" type="ushort">
         <description>Ports to listen on for server mode, or ports to connect to for client mode.</description>
+        <values>
+          <value>32191</value>
+        </values>
       </simplesequence>
     </struct>
     <configurationkind kindtype="configure"/>
