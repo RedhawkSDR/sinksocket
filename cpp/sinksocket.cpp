@@ -356,7 +356,6 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 			std::vector<unsigned short> byteSwaps = (*i)->getByteSwaps();
 
 			for (std::vector<unsigned short>::iterator j = byteSwaps.begin(); j != byteSwaps.end(); ++j) {
-
 				if (*j != 0) {
 					if (byteSwapped[byteSwapKey].find(*j) == byteSwapped[byteSwapKey].end()) {
 						createByteSwappedVector(packet->dataBuffer, *j);
@@ -371,7 +370,6 @@ int sinksocket_i::serviceFunctionT(T* inputPort)
 
 		byteSwapped[byteSwapKey].clear();
 	} else {
-
 		// Iterate through the internal connections and write the data buffer
 		for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
 			returned = (*i)->write(packet->dataBuffer);

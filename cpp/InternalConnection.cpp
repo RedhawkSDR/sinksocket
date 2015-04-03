@@ -104,7 +104,7 @@ void InternalConnection::cleanUp()
  * for that object, while returning the statistic
  * information
  */
-ConnectionStat_struct InternalConnection::createClientConnection(const unsigned short &port, const std::string &ip, const unsigned short &byteSwap)
+ConnectionStat_struct InternalConnection::createClientConnection(const unsigned short &port, const std::string &ip)
 {
 	LOG_TRACE(InternalConnection, __PRETTY_FUNCTION__);
 	LOG_INFO(InternalConnection, "Creating client connection to " << ip << ":" << port);
@@ -134,7 +134,6 @@ ConnectionStat_struct InternalConnection::createClientConnection(const unsigned 
 		// Make a new QuickStats pair, bytesSent pair, and clients pair
 		bytesPerSec.insert(std::make_pair(port, new QuickStats));
 		bytesSent.insert(std::make_pair(port, 0));
-		byteSwaps.insert(std::make_pair(port, byteSwap));
 		clients->insert(std::make_pair(port, newClient));
 	} catch(std::exception &e) {
 		LOG_ERROR(InternalConnection, "Unable to create client connection to " << ip << ":" << port);
@@ -154,7 +153,7 @@ ConnectionStat_struct InternalConnection::createClientConnection(const unsigned 
  * the relevant information for that object, while
  * returning the statistic information
  */
-ConnectionStat_struct InternalConnection::createServerConnection(const unsigned short &port, const unsigned short &byteSwap)
+ConnectionStat_struct InternalConnection::createServerConnection(const unsigned short &port)
 {
 	LOG_TRACE(InternalConnection, __PRETTY_FUNCTION__);
 	LOG_INFO(InternalConnection, "Creating server listening on port " << port);
@@ -184,7 +183,6 @@ ConnectionStat_struct InternalConnection::createServerConnection(const unsigned 
 		// Make a new QuickStats pair, bytesSent pair, and servers pair
 		bytesPerSec.insert(std::make_pair(port, new QuickStats));
 		bytesSent.insert(std::make_pair(port, 0));
-		byteSwaps.insert(std::make_pair(port, byteSwap));
 		servers->insert(std::make_pair(port, newServer));
 	} catch(std::exception &e) {
 		LOG_ERROR(InternalConnection, "Unable to create server listening on port " << port);
@@ -212,13 +210,7 @@ std::vector<unsigned short> InternalConnection::getByteSwaps() const
  */
 bool InternalConnection::operator==(const Connection_struct &connection) const
 {
-	if (connectionInfo.connection_type != connection.connection_type) {
-		return false;
-	} else if (connectionInfo.ip_address != connection.ip_address) {
-		return false;
-	}
-
-	return true;
+	return (connectionInfo == connection);
 }
 
 /*
@@ -234,11 +226,8 @@ std::vector<ConnectionStat_struct> InternalConnection::populateClientMap(const C
 
 	std::vector<ConnectionStat_struct> statistics;
 
-	// Keep track of which byte swap value to use
-	int counter = 0;
-
-	for (std::vector<unsigned short>::const_iterator i = connection.ports.begin(); i != connection.ports.end(); ++i, ++counter) {
-		statistics.push_back(createClientConnection(*i, connection.ip_address, connection.byte_swap[counter]));
+	for (std::vector<unsigned short>::const_iterator i = connection.ports.begin(); i != connection.ports.end(); ++i) {
+		statistics.push_back(createClientConnection(*i, connection.ip_address));
 	}
 
 	return statistics;
@@ -256,11 +245,8 @@ std::vector<ConnectionStat_struct> InternalConnection::populateServerMap(const C
 
 	std::vector<ConnectionStat_struct> statistics;
 
-	// Keep track of which byte swap value to use
-	int counter = 0;
-
-	for (std::vector<unsigned short>::const_iterator i = connection.ports.begin(); i != connection.ports.end(); ++i, ++counter) {
-		statistics.push_back(createServerConnection(*i, connection.byte_swap[counter]));
+	for (std::vector<unsigned short>::const_iterator i = connection.ports.begin(); i != connection.ports.end(); ++i) {
+		statistics.push_back(createServerConnection(*i));
 	}
 
 	return statistics;
@@ -333,7 +319,7 @@ std::vector<ConnectionStat_struct> InternalConnection::setConnection(const Conne
 				// Check for added ports
 				for (std::vector<unsigned short>::const_iterator i = connection.ports.begin(); i != connection.ports.end(); ++i, ++counter) {
 					if (find(connectionInfo.ports.begin(), connectionInfo.ports.end(), *i) == connectionInfo.ports.end()) {
-						statistics.push_back(createClientConnection(*i, connection.ip_address, connectionInfo.byte_swap[counter]));
+						statistics.push_back(createClientConnection(*i, connection.ip_address));
 					}
 				}
 
@@ -362,7 +348,7 @@ std::vector<ConnectionStat_struct> InternalConnection::setConnection(const Conne
 				// Check for added ports
 				for (std::vector<unsigned short>::const_iterator i = connection.ports.begin(); i != connection.ports.end(); ++i, ++counter) {
 					if (find(connectionInfo.ports.begin(), connectionInfo.ports.end(), *i) == connectionInfo.ports.end()) {
-						statistics.push_back(createServerConnection(*i, connection.byte_swap[counter]));
+						statistics.push_back(createServerConnection(*i));
 					}
 				}
 
@@ -384,6 +370,16 @@ std::vector<ConnectionStat_struct> InternalConnection::setConnection(const Conne
 		}
 	}
 
+	// Re-build the byte swap map
+	int counter = 0;
+
+	byteSwaps.clear();
+
+	// Catch all for byte swaps changed
+	for (std::vector<unsigned short>::const_iterator i = connection.ports.begin(); i != connection.ports.end(); ++i, ++counter) {
+		byteSwaps[*i] = connection.byte_swap[counter];
+	}
+
 	return statistics;
 }
 
@@ -395,6 +391,7 @@ std::vector<ConnectionStat_struct> InternalConnection::writeByteSwap(std::map<un
 	std::vector<ConnectionStat_struct> statistics;
 
 	if (connectionInfo.connection_type == "client" && clients) {
+		statistics.reserve(clients->size());
 
 		for (portClientMap::iterator i = clients->begin(); i != clients->end(); ++i) {
 			ConnectionStat_struct statistic;
@@ -419,6 +416,7 @@ std::vector<ConnectionStat_struct> InternalConnection::writeByteSwap(std::map<un
 			statistics.push_back(statistic);
 		}
 	} else if (connectionInfo.connection_type == "server" && servers) {
+		statistics.reserve(servers->size());
 
 		for (portServerMap::iterator i = servers->begin(); i != servers->end(); ++i) {
 			ConnectionStat_struct statistic;

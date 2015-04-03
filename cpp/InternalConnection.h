@@ -65,8 +65,8 @@ public:
 
 private:
 	void cleanUp();
-	ConnectionStat_struct createClientConnection(const unsigned short &port, const std::string &ip, const unsigned short &byteSwap);
-	ConnectionStat_struct createServerConnection(const unsigned short &port, const unsigned short &byteSwap);
+	ConnectionStat_struct createClientConnection(const unsigned short &port, const std::string &ip);
+	ConnectionStat_struct createServerConnection(const unsigned short &port);
 	std::vector<ConnectionStat_struct> populateClientMap(const Connection_struct &connection);
 	std::vector<ConnectionStat_struct> populateServerMap(const Connection_struct &connection);
 
