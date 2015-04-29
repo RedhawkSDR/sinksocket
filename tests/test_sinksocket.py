@@ -24,7 +24,9 @@ from ossie.utils import sb
 
 import struct
 import time
-import traceback  
+import traceback
+
+from NetworkSource import NetworkSource
 
 STRING_MAP = {'octet':'B',
               'char':'b',
@@ -142,7 +144,6 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
     def testDUShort(self):
         self.runTest(clientFirst=False, client = 'sourcesocket', dataPackets=self.U_SHORT_DATA,portType='ushort')
 
-
     def testAShort(self):
         self.runTest(clientFirst=True, client = 'sinksocket', dataPackets=self.SHORT_DATA,portType='short')
     def testBShort(self):
@@ -204,7 +205,6 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.runMultiConnectionTest(client = 'sinksocket', dataPackets=self.U_SHORT_DATA,portType='ushort')
     def testBMultiConnectionUShort(self):
         self.runMultiConnectionTest(client = 'sourcesocket', dataPackets=self.U_SHORT_DATA,portType='ushort')
-
 
     def testAMultiConnectionShort(self):
         self.runMultiConnectionTest(client = 'sinksocket', dataPackets=self.SHORT_DATA,portType='short')
@@ -441,7 +441,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         so = toStr(self.output,TYPE)
         f= flip(so,4)
         assert(s[:len(f)]==f)
-
+    
     def testByteSwap22(self):
         TYPE= 'float'
         SWAP = 1
@@ -450,7 +450,6 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         so = toStr(self.output,TYPE)
         f= flip(so,4)
         assert(s[:len(f)]==f)
-    
     
     #8 bytes for double    
     def testByteSwap23(self):
@@ -489,7 +488,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
         assert(s[:len(f)]==f)
-
+    
     def testByteSwap27(self):
         TYPE= 'ushort'
         SWAP = 5
@@ -587,9 +586,9 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.startTest(client, portType)
         
         if maxBytes!=None:
-            self.sourceSocket.max_bytes = maxBytes
+            self.sourceSocket.setMax_bytes(maxBytes)
         if minBytes!=None:
-            self.sourceSocket.min_bytes = minBytes
+            self.sourceSocket.setMin_bytes(minBytes)
         
         if clientFirst:
             self.configureClient(byteSwapSrc, byteSwapSink)
@@ -664,11 +663,11 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.startTests(client, portType)
         
         if maxBytes!=None:
-            self.sourceSocket1.max_bytes = maxBytes
-            self.sourceSocket2.max_bytes = maxBytes
+            self.sourceSocket1.setMax_bytes(maxBytes)
+            self.sourceSocket2.setMax_bytes(maxBytes)
         if minBytes!=None:
-            self.sourceSocket1.min_bytes = minBytes
-            self.sourceSocket2.min_bytes = minBytes
+            self.sourceSocket1.setMin_bytes(minBytes)
+            self.sourceSocket2.setMin_bytes(minBytes)
         
         self.configureClients(byteSwapSrc, byteSwapSink)
         self.configureServers(byteSwapSrc, byteSwapSink)
@@ -772,14 +771,14 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
             self.assertTrue(self.client.Connections[0].connection_type == 'client')
             self.assertTrue(self.client.Connections[0].ports[0] == self.PORT)
         else:
-            self.client.connection_type = 'client'
-            self.client.ip_address = "localhost"
-            self.client.port = self.PORT
+            self.client.setConnection_type('client')
+            self.client.setIp_address("localhost")
+            self.client.setPort(self.PORT)
             self.assertTrue(self.client.connection_type == 'client')
             self.assertTrue(self.client.port == self.PORT)
 
             if byteSwapSrc != None:
-                self.client.byte_swap = byteSwapSrc
+                self.client.setByte_swap(byteSwapSrc)
                 self.assertTrue(self.client.byte_swap == byteSwapSrc)
 
     def configureClients(self, byteSwapSrc, byteSwapSink):
@@ -795,22 +794,22 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
             self.assertTrue(self.clients[0].Connections[0].ports[0] == self.PORT)
             self.assertTrue(self.clients[0].Connections[0].ports[1] == self.PORT+1)
         else:
-            self.clients[0].connection_type = 'client'
-            self.clients[0].ip_address = "localhost"
-            self.clients[0].port = self.PORT
+            self.clients[0].setConnection_type('client')
+            self.clients[0].setIp_address("localhost")
+            self.clients[0].setPort(self.PORT)
             self.assertTrue(self.clients[0].connection_type == 'client')
             self.assertTrue(self.clients[0].port == self.PORT)
 
-            self.clients[1].connection_type = 'client'
-            self.clients[1].ip_address = "localhost"
-            self.clients[1].port = self.PORT+1
+            self.clients[1].setConnection_type('client')
+            self.clients[1].setIp_address("localhost")
+            self.clients[1].setPort(self.PORT+1)
             self.assertTrue(self.clients[1].connection_type == 'client')
             self.assertTrue(self.clients[1].port == self.PORT+1)
 
             if byteSwapSrc != None:
-                self.clients[0].byte_swap = byteSwapSrc
+                self.clients[0].setByte_swap(byteSwapSrc)
                 self.assertTrue(self.clients[0].byte_swap == byteSwapSrc)
-                self.clients[1].byte_swap = byteSwapSrc
+                self.clients[1].setByte_swap(byteSwapSrc)
                 self.assertTrue(self.clients[1].byte_swap == byteSwapSrc)
         
     def configureServer(self, byteSwapSrc, byteSwapSink):
@@ -824,13 +823,13 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
             self.assertTrue(self.server.Connections[0].connection_type == 'server')
             self.assertTrue(self.server.Connections[0].ports[0] == self.PORT)
         else:
-            self.server.connection_type = 'server'
-            self.server.port = self.PORT
+            self.server.setConnection_type('server')
+            self.server.setPort(self.PORT)
             self.assertTrue(self.server.connection_type=='server')
             self.assertTrue(self.server.port==self.PORT)
 
             if byteSwapSrc != None:
-                self.server.byte_swap = byteSwapSrc
+                self.server.setByte_swap(byteSwapSrc)
                 self.assertTrue(self.server.byte_swap == byteSwapSrc)
 
     def configureServers(self, byteSwapSrc, byteSwapSink):
@@ -846,20 +845,20 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
             self.assertTrue(self.servers[0].Connections[0].ports[0] == self.PORT)
             self.assertTrue(self.servers[0].Connections[0].ports[1] == self.PORT+1)
         else:
-            self.servers[0].connection_type = 'server'
-            self.servers[0].port = self.PORT
+            self.servers[0].setConnection_type('server')
+            self.servers[0].setPort(self.PORT)
             self.assertTrue(self.servers[0].connection_type=='server')
             self.assertTrue(self.servers[0].port==self.PORT)
 
-            self.servers[1].connection_type = 'server'
-            self.servers[1].port = self.PORT+1
+            self.servers[1].setConnection_type('server')
+            self.servers[1].setPort(self.PORT+1)
             self.assertTrue(self.servers[1].connection_type=='server')
             self.assertTrue(self.servers[1].port==self.PORT+1)
 
             if byteSwapSrc != None:
-                self.servers[0].byte_swap = byteSwapSrc
+                self.servers[0].setByte_swap(byteSwapSrc)
                 self.assertTrue(self.servers[0].byte_swap == byteSwapSrc)
-                self.servers[1].byte_swap = byteSwapSrc
+                self.servers[1].setByte_swap(byteSwapSrc)
                 self.assertTrue(self.servers[1].byte_swap == byteSwapSrc)
 
     def startTest(self, client='sinksocket', portType='octet'):
@@ -867,7 +866,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.src = sb.DataSource()
         self.sink = sb.DataSink()
         self.sinkSocket = self.comp
-        self.sourceSocket = sb.launch('../../sourcesocket/sourcesocket.spd.xml')
+        self.sourceSocket = NetworkSource()
         
         if client == 'sinksocket':
             self.client = self.sinkSocket
@@ -878,7 +877,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         
         sinkSocketName = 'data%s_in'%portType.capitalize()
         self.src.connect(self.sinkSocket, sinkSocketName)
-        self.sourceSocket.connect(self.sink, None, 'data%s_out'%portType.capitalize())
+        self.sourceSocket.connect(self.sink, None, '%sOut'%portType)
 
     def startTests(self, client='sinksocket', portType='octet'):
         self.assertNotEqual(self.comp, None)
@@ -886,10 +885,10 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.sink1 = sb.DataSink()
         self.sink2 = sb.DataSink()
         self.sinkSocket = self.comp
-        self.sourceSocket1 = sb.launch('../../sourcesocket/sourcesocket.spd.xml')
-        self.sourceSocket1.port = self.PORT
-        self.sourceSocket2 = sb.launch('../../sourcesocket/sourcesocket.spd.xml')
-        self.sourceSocket2.port = self.PORT+1
+        self.sourceSocket1 = NetworkSource()
+        self.sourceSocket1.setPort(self.PORT)
+        self.sourceSocket2 = NetworkSource()
+        self.sourceSocket2.setPort(self.PORT+1)
         
         if client == 'sinksocket':
             self.clients = [self.sinkSocket]
@@ -900,8 +899,8 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         
         sinkSocketName = 'data%s_in'%portType.capitalize()
         self.src.connect(self.sinkSocket, sinkSocketName)
-        self.sourceSocket1.connect(self.sink1, None, 'data%s_out'%portType.capitalize())
-        self.sourceSocket2.connect(self.sink2, None, 'data%s_out'%portType.capitalize())
+        self.sourceSocket1.connect(self.sink1, None, '%sOut'%portType)
+        self.sourceSocket2.connect(self.sink2, None, '%sOut'%portType)
         
     def stopTest(self):
         self.src.stop()
