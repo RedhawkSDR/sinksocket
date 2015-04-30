@@ -32,7 +32,7 @@ import select
 import socket
 import struct
 import threading as _threading
-import time
+import time as _time
 
 from ossie.utils.sb import io_helpers
 
@@ -187,11 +187,17 @@ class NetworkSource(io_helpers._SourceBase):
         else:
             output = dataString[:numBytes]
 
+        # Convert from a string to a list of
+        # the type expected for the port
         outputList = self._stringToList(output, bytesPerSample, srcPortType)
 
         formattedOutput = _bulkio_helpers.formatData(outputList, BULKIOtype=eval(srcPortType))
 
         EOS = False
+
+        if len(formattedOutput) == 0:
+            EOS = True
+
         T = _BULKIO.PrecisionUTCTime(_BULKIO.TCM_CPU,
                                      _BULKIO.TCS_VALID,
                                      0.0,
@@ -216,12 +222,12 @@ class NetworkSource(io_helpers._SourceBase):
         data from the socket and pushing it
         to the ports
         """
-        self.settingsAcquired = False
         self.threadExited = False
 
         currentSampleTime = self._startTime
 
         while not self._exitThread:
+            # Open the socket(s) if necessary
             if self._dataSocket == None:
                 if self.connection_type == "server":
                     if self._serverSocket == None:
@@ -235,14 +241,15 @@ class NetworkSource(io_helpers._SourceBase):
 
                 self._dataSocket.setblocking(0)
 
-                time.sleep(0.1)
+                _time.sleep(0.1)
                 continue
 
             if len(self._connections.values()) == 0:
                 log.warn("No connections to NetworkSource")
-                time.sleep(1.0)
+                _time.sleep(1.0)
                 continue
 
+            # Send packets of size max_bytes
             if len(self._buffer) >= self.max_bytes:
                 numLoops = len(self._buffer) / self.max_bytes
 
@@ -252,11 +259,12 @@ class NetworkSource(io_helpers._SourceBase):
 
                 self._buffer = self._buffer[numLoops * self.max_bytes:]
 
-            startIndex = len(self._buffer)
-
             self._retrieveData()
 
-            numRead = len(self._buffer) - startIndex
+            # Check if the thread was shut down
+            # during retrieval before continuing
+            if self._exitThread == True:
+                break
 
             if len(self._buffer) != 0 and len(self._buffer) >= self.min_bytes:
                 numLeft = len(self._buffer) % self._multSize
@@ -266,6 +274,9 @@ class NetworkSource(io_helpers._SourceBase):
                     self._pushData(connection, self._buffer, pushBytes, currentSampleTime)
 
                 self._buffer = self._buffer[len(self._buffer)-numLeft :]
+
+        # Indicate that the thread has finished
+        self.threadExited = True
 
     def releaseObject(self):
         self._closeSockets()
@@ -363,8 +374,9 @@ class NetworkSource(io_helpers._SourceBase):
     def stop(self):
         self._exitThread = True
 
-        if self.threadExited == None:
+        if self.threadExited != None:
             timeout_count = 10
+
             while not self.threadExited:
                 _time.sleep(0.1)
                 timeout_count -= 1

@@ -70,21 +70,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
     LONG_DATA = [range(i*2**30,(i+1)*2**30, 500000) for i in xrange(-2,2)]
     FLOAT_DATA = DOUBLE_DATA = [[float(x) for x in range(i*4096,(i+1)*4096)] for i in xrange(16)]
     
-    def startSinkSocket(self):
-        #######################################################################
-        # Launch the component with the default execparams
-        execparams = self.getPropertySet(kinds=("execparam",), modes=("readwrite", "writeonly"), includeNil=False)
-        execparams = dict([(x.id, any.from_any(x.value)) for x in execparams])
-        self.launch(execparams)
-        
-        #######################################################################
-        # Verify the basic state of the component
-        self.assertNotEqual(self.comp, None)
-        self.assertEqual(self.comp.ref._non_existent(), False)
-        self.assertEqual(self.comp.ref._is_a("IDL:CF/Resource:1.0"), True)
-
     def testScaBasicBehavior(self):
-        self.startSinkSocket()
         #######################################################################
         # Validate that query returns all expected parameters
         # Query of '[]' should return the following set of properties
@@ -582,7 +568,6 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         assert(s[:len(f)]==f)
     
     def runTest(self, clientFirst=True, client = 'sinksocket',dataPackets=[],maxBytes=None,minBytes=None, portType='octet',byteSwapSrc=None, byteSwapSink=None):
-        self.startSinkSocket()
         self.startTest(client, portType)
         
         if maxBytes!=None:
@@ -655,27 +640,24 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
 
         if byteSwapSrc == byteSwapSink:
             self.assertEquals(self.input[:len(self.output)],self.output)
-        
-        self.stopTest()
 
     def runMultiConnectionTest(self, client = 'sinksocket',dataPackets=[],maxBytes=None,minBytes=None, portType='octet',byteSwapSrc=None, byteSwapSink=None):
-        self.startSinkSocket()
         self.startTests(client, portType)
         
         if maxBytes!=None:
-            self.sourceSocket1.setMax_bytes(maxBytes)
+            self.sourceSocket.setMax_bytes(maxBytes)
             self.sourceSocket2.setMax_bytes(maxBytes)
         if minBytes!=None:
-            self.sourceSocket1.setMin_bytes(minBytes)
+            self.sourceSocket.setMin_bytes(minBytes)
             self.sourceSocket2.setMin_bytes(minBytes)
         
         self.configureClients(byteSwapSrc, byteSwapSink)
         self.configureServers(byteSwapSrc, byteSwapSink)
         
         self.src.start()
-        self.sink1.start()
+        self.sink.start()
         self.sink2.start()
-        self.sourceSocket1.start()
+        self.sourceSocket.start()
         self.sourceSocket2.start()
         self.sinkSocket.start()
         
@@ -689,7 +671,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
             self.input.extend(packet)
             self.src.push(packet, False, "test stream", 1.0)
 
-            newdata1 = self.sink1.getData()
+            newdata1 = self.sink.getData()
 
             if newdata1:
                 if portType == 'octet':
@@ -710,7 +692,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         noData = 0
 
         while True:
-            newdata1 = self.sink1.getData()
+            newdata1 = self.sink.getData()
             newdata2 = self.sink2.getData()
 
             if not newdata1 and not newdata2:
@@ -737,19 +719,19 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
                     else:
                         self.output2.extend(newdata2)
 
-        print "self.sourceSocket1.bytes_per_sec", self.sourceSocket1.bytes_per_sec
+        print "self.sourceSocket.bytes_per_sec", self.sourceSocket.bytes_per_sec
         print "self.sourceSocket2.bytes_per_sec", self.sourceSocket2.bytes_per_sec
         print "self.sinkSocket.bytes_per_sec", self.sinkSocket.bytes_per_sec
 ##        
         print "self.sinkSocket.total_bytes", self.sinkSocket.total_bytes
-        print "self.source1Socket1.total_bytes",  self.sourceSocket1.total_bytes
+        print "self.source1Socket.total_bytes",  self.sourceSocket.total_bytes
         print "self.source1Socket2.total_bytes",  self.sourceSocket2.total_bytes
 ##        
         print "len(self.input)", len(self.input), "len(self.output1)", len(self.output1), "len(self.output2)", len(self.output2)
         
         self.assertTrue(len(self.output1)> 0)
         self.assertTrue(len(self.output2)> 0)
-        self.assertTrue(len(self.input)-len(self.output1)< self.sourceSocket1.max_bytes)
+        self.assertTrue(len(self.input)-len(self.output1)< self.sourceSocket.max_bytes)
         self.assertTrue(len(self.input)-len(self.output2)< self.sourceSocket2.max_bytes)
         self.assertTrue(len(self.input)>=len(self.output1))
         self.assertTrue(len(self.input)>=len(self.output2))
@@ -757,8 +739,6 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         if byteSwapSrc == byteSwapSink:
             self.assertEquals(self.input[:len(self.output1)],self.output1)
             self.assertEquals(self.input[:len(self.output2)],self.output2)
-        
-        self.stopTests()
     
     def configureClient(self, byteSwapSrc, byteSwapSink):
         if self.client == self.sinkSocket:
@@ -861,13 +841,35 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
                 self.servers[1].setByte_swap(byteSwapSrc)
                 self.assertTrue(self.servers[1].byte_swap == byteSwapSrc)
 
-    def startTest(self, client='sinksocket', portType='octet'):
+    def setUp(self):
+        ossie.utils.testing.ScaComponentTestCase.setUp(self)
+
+        #######################################################################
+        # Launch the component with the default execparams
+        execparams = self.getPropertySet(kinds=("execparam",), modes=("readwrite", "writeonly"), includeNil=False)
+        execparams = dict([(x.id, any.from_any(x.value)) for x in execparams])
+        self.launch(execparams)
+        
+        #######################################################################
+        # Verify the basic state of the component
         self.assertNotEqual(self.comp, None)
+        self.assertEqual(self.comp.ref._non_existent(), False)
+        self.assertEqual(self.comp.ref._is_a("IDL:CF/Resource:1.0"), True)
+
+        # Load resources for majority of tests
         self.src = sb.DataSource()
         self.sink = sb.DataSink()
         self.sinkSocket = self.comp
         self.sourceSocket = NetworkSource()
-        
+
+        self.client = None
+        self.clients = None
+        self.server = None
+        self.servers = None
+        self.sink2 = None
+        self.sourceSocket2 = None
+
+    def startTest(self, client='sinksocket', portType='octet'):
         if client == 'sinksocket':
             self.client = self.sinkSocket
             self.server = self.sourceSocket
@@ -880,57 +882,60 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.sourceSocket.connect(self.sink, None, '%sOut'%portType)
 
     def startTests(self, client='sinksocket', portType='octet'):
-        self.assertNotEqual(self.comp, None)
-        self.src = sb.DataSource()
-        self.sink1 = sb.DataSink()
         self.sink2 = sb.DataSink()
-        self.sinkSocket = self.comp
-        self.sourceSocket1 = NetworkSource()
-        self.sourceSocket1.setPort(self.PORT)
+        self.sourceSocket.setPort(self.PORT)
         self.sourceSocket2 = NetworkSource()
         self.sourceSocket2.setPort(self.PORT+1)
         
         if client == 'sinksocket':
             self.clients = [self.sinkSocket]
-            self.servers = [self.sourceSocket1, self.sourceSocket2]
+            self.servers = [self.sourceSocket, self.sourceSocket2]
         else:
             self.servers = [self.sinkSocket]
-            self.clients = [self.sourceSocket1, self.sourceSocket2]
+            self.clients = [self.sourceSocket, self.sourceSocket2]
         
         sinkSocketName = 'data%s_in'%portType.capitalize()
         self.src.connect(self.sinkSocket, sinkSocketName)
-        self.sourceSocket1.connect(self.sink1, None, '%sOut'%portType)
+        self.sourceSocket.connect(self.sink, None, '%sOut'%portType)
         self.sourceSocket2.connect(self.sink2, None, '%sOut'%portType)
-        
-    def stopTest(self):
-        self.src.stop()
-        self.sink.stop()
-        self.sinkSocket.stop()
-        self.sourceSocket.stop()
-                
-        self.src.releaseObject()
-        self.sink.releaseObject()
-        self.sinkSocket.releaseObject()
-        self.sourceSocket.releaseObject()
-        
-        self.src = self.sink = self.sinkSocket = self.sourceSocket = self.client = self.server = None
 
-    def stopTests(self):
-        self.src.stop()
-        self.sink1.stop()
-        self.sink2.stop()
-        self.sinkSocket.stop()
-        self.sourceSocket1.stop()
-        self.sourceSocket2.stop()
-                
-        self.src.releaseObject()
-        self.sink1.releaseObject()
-        self.sink2.releaseObject()
-        self.sinkSocket.releaseObject()
-        self.sourceSocket1.releaseObject()
-        self.sourceSocket2.releaseObject()
-        
-        self.src = self.sink1 = self.sink2 = self.sinkSocket = self.sourceSocket1 = self.sourceSocket2 = self.client = self.server = None
+    def tearDown(self):
+        ossie.utils.testing.ScaComponentTestCase.tearDown(self)
+
+        if self.src != None:
+            self.src.stop()
+            self.src.releaseObject()
+            self.src = None
+
+        if self.sink != None:
+            self.sink.stop()
+            self.sink.releaseObject()
+            self.sink = None
+
+        if self.sink2 != None:
+            self.sink2.stop()
+            self.sink2.releaseObject()
+            self.sink2 = None
+
+        if self.sinkSocket != None:
+            self.sinkSocket.stop()
+            self.sinkSocket.releaseObject()
+            self.sinkSocket = None
+
+        if self.sourceSocket != None:
+            self.sourceSocket.stop()
+            self.sourceSocket.releaseObject()
+            self.sourceSocket = None
+
+        if self.sourceSocket2 != None:
+            self.sourceSocket2.stop()
+            self.sourceSocket2.releaseObject()
+            self.sourceSocket2 = None
+
+        self.client = None
+        self.clients = None
+        self.server = None
+        self.servers = None
     
 if __name__ == "__main__":
     ossie.utils.testing.main("../sinksocket.spd.xml") # By default tests all implementations
