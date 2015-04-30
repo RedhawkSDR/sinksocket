@@ -234,7 +234,16 @@ class NetworkSource(io_helpers._SourceBase):
                         self._openSocket()
                     
                     log.debug("Waiting for client connection")
+                    
+                    ready = select.select([self._serverSocket], [], [], 1.0)
+
+                    if not ready[0]:
+                        log.info("No connections pending")
+                        _time.sleep(0.1)
+                        continue
+
                     (self._dataSocket, clientAddress) = self._serverSocket.accept()
+
                     log.debug("Got client connection: " + str(clientAddress))
                 else:
                     self._openSocket()
