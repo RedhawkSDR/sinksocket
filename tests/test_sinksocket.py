@@ -743,16 +743,16 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
     def configureClient(self, byteSwapSrc, byteSwapSink):
         if self.client == self.sinkSocket:
             if byteSwapSink != None:
-                self.client.Connections = [{'connection_type' : 'client', 'ip_address' : 'localhost', 'ports' : [self.PORT], 'byte_swap' : [byteSwapSink]}]
+                self.client.Connections = [{'connection_type' : 'client', 'ip_address' : '127.0.0.1', 'ports' : [self.PORT], 'byte_swap' : [byteSwapSink]}]
                 self.assertTrue(self.client.Connections[0].byte_swap[0] == byteSwapSink)
             else:
-                self.client.Connections = [{'connection_type' : 'client', 'ip_address' : 'localhost', 'ports' : [self.PORT], 'byte_swap' : [0]}]
+                self.client.Connections = [{'connection_type' : 'client', 'ip_address' : '127.0.0.1', 'ports' : [self.PORT], 'byte_swap' : [0]}]
 
             self.assertTrue(self.client.Connections[0].connection_type == 'client')
             self.assertTrue(self.client.Connections[0].ports[0] == self.PORT)
         else:
             self.client.setConnection_type('client')
-            self.client.setIp_address("localhost")
+            self.client.setIp_address("127.0.0.1")
             self.client.setPort(self.PORT)
             self.assertTrue(self.client.connection_type == 'client')
             self.assertTrue(self.client.port == self.PORT)
@@ -764,24 +764,24 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
     def configureClients(self, byteSwapSrc, byteSwapSink):
         if self.clients[0] == self.sinkSocket:
             if byteSwapSink != None:
-                self.clients[0].Connections = [{'connection_type' : 'client', 'ip_address' : 'localhost', 'ports' : [self.PORT, self.PORT+1], 'byte_swap' : [byteSwapSink, byteSwapSink]}]
+                self.clients[0].Connections = [{'connection_type' : 'client', 'ip_address' : '127.0.0.1', 'ports' : [self.PORT, self.PORT+1], 'byte_swap' : [byteSwapSink, byteSwapSink]}]
                 self.assertTrue(self.clients[0].Connections[0].byte_swap[0] == byteSwapSink)
                 self.assertTrue(self.clients[0].Connections[0].byte_swap[1] == byteSwapSink)
             else:
-                self.clients[0].Connections = [{'connection_type' : 'client', 'ip_address' : 'localhost', 'ports' : [self.PORT, self.PORT+1], 'byte_swap' : [0, 0]}]
+                self.clients[0].Connections = [{'connection_type' : 'client', 'ip_address' : '127.0.0.1', 'ports' : [self.PORT, self.PORT+1], 'byte_swap' : [0, 0]}]
 
             self.assertTrue(self.clients[0].Connections[0].connection_type == 'client')
             self.assertTrue(self.clients[0].Connections[0].ports[0] == self.PORT)
             self.assertTrue(self.clients[0].Connections[0].ports[1] == self.PORT+1)
         else:
             self.clients[0].setConnection_type('client')
-            self.clients[0].setIp_address("localhost")
+            self.clients[0].setIp_address("127.0.0.1")
             self.clients[0].setPort(self.PORT)
             self.assertTrue(self.clients[0].connection_type == 'client')
             self.assertTrue(self.clients[0].port == self.PORT)
 
             self.clients[1].setConnection_type('client')
-            self.clients[1].setIp_address("localhost")
+            self.clients[1].setIp_address("127.0.0.1")
             self.clients[1].setPort(self.PORT+1)
             self.assertTrue(self.clients[1].connection_type == 'client')
             self.assertTrue(self.clients[1].port == self.PORT+1)
