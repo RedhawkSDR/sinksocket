@@ -1,0 +1,8 @@
+539f3f2ce02bbb17c0378f168b3ae8be  main.cpp
+c99df9fa4ab0cd042eac42fcee6441c3  reconf
+c0c2bba4f8de44514bb8f10d5136c853  configure.ac
+4255d30253533854b3390b9b664a77f9  Makefile.am
+10a09ce7d73a3969f9bfef8986fbb152  sinksocket_base.cpp
+4ff44eedac0b9709f93342b99082208f  sinksocket_base.h
+184afe9314cfabab90c19a97cb7b49bb  struct_props.h
+b87651ea3565402473fb088004430fbf  build.sh

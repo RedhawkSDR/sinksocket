@@ -40,9 +40,11 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  redhawk-devel >= 2.0
 Requires:       redhawk >= 2.0
 
+
 # Interface requirements
 BuildRequires:  bulkioInterfaces >= 2.0
 Requires:       bulkioInterfaces >= 2.0
+
 
 %description
 Component %{name}
@@ -79,9 +81,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,redhawk,redhawk,-)
-%dir %{_prefix}/dom/components/%{name}
-%{_prefix}/dom/components/%{name}/sinksocket.scd.xml
-%{_prefix}/dom/components/%{name}/sinksocket.prf.xml
-%{_prefix}/dom/components/%{name}/sinksocket.spd.xml
-%{_prefix}/dom/components/%{name}/cpp
+%dir %{_prefix}/dom/components/sinksocket
+%{_prefix}/dom/components/sinksocket/sinksocket.scd.xml
+%{_prefix}/dom/components/sinksocket/sinksocket.prf.xml
+%{_prefix}/dom/components/sinksocket/sinksocket.spd.xml
+%{_prefix}/dom/components/sinksocket/cpp
 

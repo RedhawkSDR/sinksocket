@@ -51,7 +51,7 @@ struct Connection_struct {
 inline bool operator>>= (const CORBA::Any& a, Connection_struct& s) {
     CF::Properties* temp;
     if (!(a >>= temp)) return false;
-    redhawk::PropertyMap props(*temp);
+    const redhawk::PropertyMap& props = redhawk::PropertyMap::cast(*temp);
     if (props.contains("Connection::connection_type")) {
         if (!(props["Connection::connection_type"] >>= s.connection_type)) return false;
     }
@@ -65,7 +65,7 @@ inline bool operator>>= (const CORBA::Any& a, Connection_struct& s) {
         if (!(props["Connection::ports"] >>= s.ports)) return false;
     }
     return true;
-};
+}
 
 inline void operator<<= (CORBA::Any& a, const Connection_struct& s) {
     redhawk::PropertyMap props;
@@ -78,7 +78,7 @@ inline void operator<<= (CORBA::Any& a, const Connection_struct& s) {
  
     props["Connection::ports"] = s.ports;
     a <<= props;
-};
+}
 
 inline bool operator== (const Connection_struct& s1, const Connection_struct& s2) {
     if (s1.connection_type!=s2.connection_type)
@@ -90,11 +90,11 @@ inline bool operator== (const Connection_struct& s1, const Connection_struct& s2
     if (s1.ports!=s2.ports)
         return false;
     return true;
-};
+}
 
 inline bool operator!= (const Connection_struct& s1, const Connection_struct& s2) {
     return !(s1==s2);
-};
+}
 
 struct ConnectionStat_struct {
     ConnectionStat_struct ()
@@ -115,7 +115,7 @@ struct ConnectionStat_struct {
 inline bool operator>>= (const CORBA::Any& a, ConnectionStat_struct& s) {
     CF::Properties* temp;
     if (!(a >>= temp)) return false;
-    redhawk::PropertyMap props(*temp);
+    const redhawk::PropertyMap& props = redhawk::PropertyMap::cast(*temp);
     if (props.contains("ConnectionStat::ip_address")) {
         if (!(props["ConnectionStat::ip_address"] >>= s.ip_address)) return false;
     }
@@ -132,7 +132,7 @@ inline bool operator>>= (const CORBA::Any& a, ConnectionStat_struct& s) {
         if (!(props["ConnectionStat::bytes_sent"] >>= s.bytes_sent)) return false;
     }
     return true;
-};
+}
 
 inline void operator<<= (CORBA::Any& a, const ConnectionStat_struct& s) {
     redhawk::PropertyMap props;
@@ -147,7 +147,7 @@ inline void operator<<= (CORBA::Any& a, const ConnectionStat_struct& s) {
  
     props["ConnectionStat::bytes_sent"] = s.bytes_sent;
     a <<= props;
-};
+}
 
 inline bool operator== (const ConnectionStat_struct& s1, const ConnectionStat_struct& s2) {
     if (s1.ip_address!=s2.ip_address)
@@ -161,10 +161,10 @@ inline bool operator== (const ConnectionStat_struct& s1, const ConnectionStat_st
     if (s1.bytes_sent!=s2.bytes_sent)
         return false;
     return true;
-};
+}
 
 inline bool operator!= (const ConnectionStat_struct& s1, const ConnectionStat_struct& s2) {
     return !(s1==s2);
-};
+}
 
 #endif // STRUCTPROPS_H

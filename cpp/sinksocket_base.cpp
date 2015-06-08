@@ -35,21 +35,21 @@ sinksocket_base::sinksocket_base(const char *uuid, const char *label) :
     loadProperties();
 
     dataOctet_in = new bulkio::InOctetPort("dataOctet_in");
-    addPort("dataOctet_in", dataOctet_in);
+    addPort("dataOctet_in", "Octet port for input data. ", dataOctet_in);
     dataChar_in = new bulkio::InCharPort("dataChar_in");
-    addPort("dataChar_in", dataChar_in);
+    addPort("dataChar_in", "Char port for input data. ", dataChar_in);
     dataShort_in = new bulkio::InShortPort("dataShort_in");
-    addPort("dataShort_in", dataShort_in);
+    addPort("dataShort_in", "Short port for input data. ", dataShort_in);
     dataUshort_in = new bulkio::InUShortPort("dataUshort_in");
-    addPort("dataUshort_in", dataUshort_in);
+    addPort("dataUshort_in", "Unsigned short port for input data. ", dataUshort_in);
     dataLong_in = new bulkio::InLongPort("dataLong_in");
-    addPort("dataLong_in", dataLong_in);
+    addPort("dataLong_in", "Long port for input data. ", dataLong_in);
     dataUlong_in = new bulkio::InULongPort("dataUlong_in");
-    addPort("dataUlong_in", dataUlong_in);
+    addPort("dataUlong_in", "Unsigned long port for input data. ", dataUlong_in);
     dataFloat_in = new bulkio::InFloatPort("dataFloat_in");
-    addPort("dataFloat_in", dataFloat_in);
+    addPort("dataFloat_in", "Float port for input data. ", dataFloat_in);
     dataDouble_in = new bulkio::InDoublePort("dataDouble_in");
-    addPort("dataDouble_in", dataDouble_in);
+    addPort("dataDouble_in", "Double port for input data. ", dataDouble_in);
 }
 
 sinksocket_base::~sinksocket_base()
