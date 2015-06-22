@@ -16,11 +16,11 @@
 # program.  If not, see http://www.gnu.org/licenses/.
 #
 
-ossieName = sinksocket
-bindir = $(prefix)/dom/components/sinksocket/cpp/
+ossieName = rh.sinksocket
+bindir = $(prefix)/dom/components/rh/sinksocket/cpp/
 bin_PROGRAMS = sinksocket
 
-xmldir = $(prefix)/dom/components/sinksocket/
+xmldir = $(prefix)/dom/components/rh/sinksocket/
 dist_xml_DATA = ../sinksocket.scd.xml ../sinksocket.prf.xml ../sinksocket.spd.xml
 ACLOCAL_AMFLAGS = -I$(OSSIEHOME)/share/aclocal/ossie
 
