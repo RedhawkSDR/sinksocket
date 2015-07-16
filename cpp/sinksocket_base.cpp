@@ -32,6 +32,7 @@ sinksocket_base::sinksocket_base(const char *uuid, const char *label) :
     Component(uuid, label),
     ThreadedComponent()
 {
+#ifdef BEGIN_AUTOCOMPLETE_IGNORE
     loadProperties();
 
     dataOctet_in = new bulkio::InOctetPort("dataOctet_in");
@@ -50,6 +51,7 @@ sinksocket_base::sinksocket_base(const char *uuid, const char *label) :
     addPort("dataFloat_in", "Float port for input data. ", dataFloat_in);
     dataDouble_in = new bulkio::InDoublePort("dataDouble_in");
     addPort("dataDouble_in", "Double port for input data. ", dataDouble_in);
+#endif
 }
 
 sinksocket_base::~sinksocket_base()
@@ -72,6 +74,7 @@ sinksocket_base::~sinksocket_base()
     dataDouble_in = 0;
 }
 
+#ifdef BEGIN_AUTOCOMPLETE_IGNORE
 /*******************************************************************************************
     Framework-level functions
     These functions are generally called by the framework to perform housekeeping.
@@ -111,7 +114,7 @@ void sinksocket_base::loadProperties()
                 "readonly",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(bytes_per_sec,
                 0,
@@ -120,7 +123,7 @@ void sinksocket_base::loadProperties()
                 "readonly",
                 "BpsS",
                 "external",
-                "configure");
+                "property");
 
     addProperty(Connections,
                 "Connections",
@@ -128,7 +131,7 @@ void sinksocket_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(ConnectionStats,
                 "ConnectionStats",
@@ -136,8 +139,9 @@ void sinksocket_base::loadProperties()
                 "readonly",
                 "",
                 "external",
-                "configure");
+                "property");
 
 }
+#endif
 
 

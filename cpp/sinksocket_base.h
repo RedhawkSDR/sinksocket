@@ -32,6 +32,10 @@ class sinksocket_base : public Component, protected ThreadedComponent
         sinksocket_base(const char *uuid, const char *label);
         ~sinksocket_base();
 
+#ifdef BEGIN_AUTOCOMPLETE_IGNORE
+    /**
+     * \cond INTERNAL
+     */
         void start() throw (CF::Resource::StartError, CORBA::SystemException);
 
         void stop() throw (CF::Resource::StopError, CORBA::SystemException);
@@ -39,22 +43,38 @@ class sinksocket_base : public Component, protected ThreadedComponent
         void releaseObject() throw (CF::LifeCycle::ReleaseError, CORBA::SystemException);
 
         void loadProperties();
+    /**
+     * \endcond
+     */
+#endif
 
     protected:
         // Member variables exposed as properties
+        /// Property: total_bytes
         double total_bytes;
+        /// Property: bytes_per_sec
         float bytes_per_sec;
+        /// Property: Connections
         std::vector<Connection_struct> Connections;
+        /// Property: ConnectionStats
         std::vector<ConnectionStat_struct> ConnectionStats;
 
         // Ports
+        /// Port: dataOctet_in
         bulkio::InOctetPort *dataOctet_in;
+        /// Port: dataChar_in
         bulkio::InCharPort *dataChar_in;
+        /// Port: dataShort_in
         bulkio::InShortPort *dataShort_in;
+        /// Port: dataUshort_in
         bulkio::InUShortPort *dataUshort_in;
+        /// Port: dataLong_in
         bulkio::InLongPort *dataLong_in;
+        /// Port: dataUlong_in
         bulkio::InULongPort *dataUlong_in;
+        /// Port: dataFloat_in
         bulkio::InFloatPort *dataFloat_in;
+        /// Port: dataDouble_in
         bulkio::InDoublePort *dataDouble_in;
 
     private:

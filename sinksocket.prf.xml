@@ -21,14 +21,14 @@ program.  If not, see http://www.gnu.org/licenses/.
   <simple id="total_bytes" mode="readonly" type="double">
     <description>total bytes sent over network</description>
     <value>0</value>
-    <kind kindtype="configure"/>
+    <kind kindtype="property"/>
     <action type="external"/>
   </simple>
   <simple id="bytes_per_sec" mode="readonly" type="float">
     <description>Bytes per second send over network</description>
     <value>0</value>
     <units>BpsS</units>
-    <kind kindtype="configure"/>
+    <kind kindtype="property"/>
     <action type="external"/>
   </simple>
   <structsequence id="Connections" mode="readwrite">
@@ -64,7 +64,7 @@ Otherwise data will be swapped according to this value
         </values>
       </simplesequence>
     </struct>
-    <configurationkind kindtype="configure"/>
+    <configurationkind kindtype="property"/>
   </structsequence>
   <structsequence id="ConnectionStats" mode="readonly">
     <description>A sequence of statuses describing each connection.</description>
@@ -93,6 +93,6 @@ Otherwise data will be swapped according to this value
         <description>The number of bytes sent over this connection.</description>
       </simple>
     </struct>
-    <configurationkind kindtype="configure"/>
+    <configurationkind kindtype="property"/>
   </structsequence>
 </properties>
