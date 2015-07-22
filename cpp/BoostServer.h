@@ -90,15 +90,16 @@ public:
 
 	~server()
 	{
-		{
-			boost::mutex::scoped_lock lock(sessionsLock_);
-			sessions_.clear();
-		}
 		if(thread_)
 		{
 			io_service_.stop();
 			thread_->join();
 			delete thread_;
+		}
+
+		{
+			boost::mutex::scoped_lock lock(sessionsLock_);
+			sessions_.clear();
 		}
 	}
 
