@@ -22,10 +22,13 @@ bin_PROGRAMS = sinksocket
 
 xmldir = $(prefix)/dom/components/rh/sinksocket/
 dist_xml_DATA = ../sinksocket.scd.xml ../sinksocket.prf.xml ../sinksocket.spd.xml
-ACLOCAL_AMFLAGS = -I$(OSSIEHOME)/share/aclocal/ossie
+ACLOCAL_AMFLAGS = -I m4 -I${OSSIEHOME}/share/aclocal/ossie
+AUTOMAKE_OPTIONS = subdir-objects
+
 
 
 distclean-local:
+	rm -rf m4
 	rm -f config.*
 	rm -rf autom4te.cache
 	rm -f acinclude.m4
