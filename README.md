@@ -1,8 +1,8 @@
-# REDHAWK Basic Components sinksocket
+# REDHAWK Basic Components rh.sinksocket
  
 ## Description
 
-Contains the source and build script for the REDHAWK Basic Components sinksocket. This Component reads data from a BULKIO port and writes it to one or more TCP sockets.
+Contains the source and build script for the REDHAWK Basic Components rh.sinksocket. This Component reads data from a BULKIO port and writes it to one or more TCP sockets.
  
 ## Installation Instructions
 This asset requires the rh.dsp shared library. This must be installed in order to build and run this asset.
@@ -14,4 +14,4 @@ This work is protected by Copyright. Please refer to the [Copyright File](COPYRI
 
 ## License
 
-REDHAWK Basic Components sinksocket is licensed under the GNU Lesser General Public License (LGPL).
+REDHAWK Basic Components rh.sinksocket is licensed under the GNU Lesser General Public License (LGPL).
