@@ -128,7 +128,7 @@ ConnectionStat_struct InternalConnection::createClientConnection(const unsigned 
 		if (newClient->connect()) {
 			statistic.status = "connected";
 		} else {
-			statistic.status = "disconnected";
+			statistic.status = "not_connected";
 		}
 
 		// Make a new QuickStats pair, bytesSent pair, and clients pair
@@ -177,7 +177,7 @@ ConnectionStat_struct InternalConnection::createServerConnection(const unsigned 
 		if (newServer->is_connected()) {
 			statistic.status = "connected";
 		} else {
-			statistic.status = "disconnected";
+			statistic.status = "not_connected";
 		}
 
 		// Make a new QuickStats pair, bytesSent pair, and servers pair
