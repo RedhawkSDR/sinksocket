@@ -244,7 +244,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s = toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f = flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap2(self):
         TYPE= 'octet'
@@ -253,7 +253,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap3(self):
         TYPE= 'octet'
@@ -262,7 +262,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap4(self):
         TYPE= 'octet'
@@ -271,7 +271,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap5(self):
         TYPE= 'octet'
@@ -280,7 +280,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap6(self):
         TYPE= 'octet'
@@ -289,7 +289,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
 
     def testByteSwap7(self):
@@ -299,7 +299,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap8(self):
         TYPE= 'octet'
@@ -308,7 +308,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     #here are some tests where we swap both ends -
     #verify the output is equal
@@ -318,7 +318,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.runTest(client = 'sourcesocket', dataPackets=[range(0,100)*10], byteSwapSrc=SWAP, byteSwapSink=SWAP,minBytes=1,portType=TYPE)
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
-        assert(s[:len(so)]==so)
+        self.assertEqual(s[:len(so)],so)
 
     def testByteSwap10(self):
         TYPE= 'octet'
@@ -326,7 +326,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.runTest(client = 'sourcesocket', dataPackets=[range(0,100)*10], byteSwapSrc=SWAP, byteSwapSink=SWAP,minBytes=1,portType=TYPE)
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
-        assert(s[:len(so)]==so)
+        self.assertEqual(s[:len(so)],so)
 
     def testByteSwap11(self):
         TYPE= 'octet'
@@ -334,7 +334,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.runTest(client = 'sourcesocket', dataPackets=[range(0,100)*10], byteSwapSrc=SWAP, byteSwapSink=SWAP,minBytes=1,portType=TYPE)
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
-        assert(s[:len(so)]==so)
+        self.assertEqual(s[:len(so)],so)
         
     def testByteSwap12(self):
         TYPE= 'octet'
@@ -342,7 +342,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         self.runTest(client = 'sourcesocket', dataPackets=[range(0,100)*10], byteSwapSrc=SWAP, byteSwapSink=SWAP,minBytes=1,portType=TYPE)
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
-        assert(s[:len(so)]==so)
+        self.assertEqual(s[:len(so)],so)
         
     #here are some tests where we use the swapping defined as the default for each port by settign SWAP to 1
     #2 bytes for short & ushort
@@ -353,7 +353,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,2)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap14(self):
         TYPE= 'short'
@@ -362,7 +362,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,2)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap15(self):
         TYPE= 'ushort'
@@ -371,7 +371,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,2)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap16(self):
         TYPE= 'ushort'
@@ -380,7 +380,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,2)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     #4 bytes for long & ulong, & float
     def testByteSwap17(self):
@@ -390,7 +390,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,4)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap18(self):
         TYPE= 'long'
@@ -399,7 +399,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,4)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap19(self):
         TYPE= 'ulong'
@@ -408,7 +408,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,4)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap20(self):
         TYPE= 'ulong'
@@ -417,7 +417,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,4)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap21(self):
         TYPE= 'float'
@@ -426,7 +426,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,4)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     def testByteSwap22(self):
         TYPE= 'float'
@@ -435,7 +435,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,4)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     #8 bytes for double    
     def testByteSwap23(self):
@@ -445,7 +445,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,8)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap24(self):
         TYPE= 'double'
@@ -454,7 +454,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,8)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     #Do a test with all the different type of ports using a non-standard byte swapping
     def testByteSwap25(self):
@@ -464,7 +464,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     def testByteSwap26(self):
         TYPE= 'short'
@@ -473,7 +473,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     def testByteSwap27(self):
         TYPE= 'ushort'
@@ -482,7 +482,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap28(self):
         TYPE= 'ushort'
@@ -491,7 +491,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     def testByteSwap29(self):
         TYPE= 'long'
@@ -501,7 +501,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap30(self):
         TYPE= 'long'
@@ -510,7 +510,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap31(self):
         TYPE= 'ulong'
@@ -519,7 +519,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap32(self):
         TYPE= 'ulong'
@@ -528,7 +528,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap33(self):
         TYPE= 'float'
@@ -537,7 +537,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap34(self):
         TYPE= 'float'
@@ -546,7 +546,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
      
     def testByteSwap35(self):
@@ -556,7 +556,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
 
     def testByteSwap36(self):
         TYPE= 'double'
@@ -565,7 +565,7 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
         s= toStr(self.input,TYPE)
         so = toStr(self.output,TYPE)
         f= flip(so,SWAP)
-        assert(s[:len(f)]==f)
+        self.assertEqual(s[:len(f)],f)
     
     def runTest(self, clientFirst=True, client = 'sinksocket',dataPackets=[],maxBytes=None,minBytes=None, portType='octet',byteSwapSrc=None, byteSwapSink=None):
         self.startTest(client, portType)
