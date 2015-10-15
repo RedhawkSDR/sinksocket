@@ -921,11 +921,6 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
             self.sink2.releaseObject()
             self.sink2 = None
 
-        if self.sinkSocket != None:
-            self.sinkSocket.stop()
-            self.sinkSocket.releaseObject()
-            self.sinkSocket = None
-
         if self.sourceSocket != None:
             self.sourceSocket.stop()
             self.sourceSocket.releaseObject()
@@ -935,6 +930,11 @@ class ComponentTests(ossie.utils.testing.ScaComponentTestCase):
             self.sourceSocket2.stop()
             self.sourceSocket2.releaseObject()
             self.sourceSocket2 = None
+
+        if self.sinkSocket != None:
+            self.sinkSocket.stop()
+            self.sinkSocket.releaseObject()
+            self.sinkSocket = None
 
         self.client = None
         self.clients = None
