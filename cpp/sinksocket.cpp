@@ -43,8 +43,6 @@ PREPARE_LOGGING(sinksocket_i)
 sinksocket_i::sinksocket_i(const char *uuid, const char *label) :
     sinksocket_base(uuid, label)
 {
-	addPropertyChangeListener("Connections", this, &sinksocket_i::ConnectionsChanged);
-
 	bytesPerSecTemp = 0;
 	bytes_per_sec = 0;
 	onlyByteSwaps = false;
@@ -60,6 +58,15 @@ sinksocket_i::~sinksocket_i()
 	for (std::vector<InternalConnection *>::iterator i = internalConnections.begin(); i != internalConnections.end(); ++i) {
 		delete *i;
 	}
+}
+
+void sinksocket_i::constructor()
+{
+    /***********************************************************************************
+     This is the RH constructor. All properties are properly initialized before this function is called
+    ***********************************************************************************/
+	ConnectionsChanged(NULL,&Connections); // apply initial property configuration
+	addPropertyChangeListener("Connections", this, &sinksocket_i::ConnectionsChanged);
 }
 
 template<typename T, typename U>
@@ -272,24 +279,26 @@ void sinksocket_i::ConnectionsChanged(const std::vector<Connection_struct> *oldV
 		}
 	}
 
-	// Remove from the current connections
-	for (std::vector<Connection_struct>::const_iterator i = oldValue->begin(); i != oldValue->end(); ++i) {
-		// If the value exists in the old property but not in the duplicate
-		// free version, it has been removed
-		if (find(duplicateFree.begin(), duplicateFree.end(), *i) == duplicateFree.end()) {
-			std::vector<InternalConnection *>::iterator found = find(internalConnections.begin(), internalConnections.end(), *i);
+	ConnectionStats = stats;
 
-			// If found, delete and remove the entry
-			if (found != internalConnections.end()) {
-				delete *found;
-				internalConnections.erase(found);
-			} else {
-				LOG_ERROR(sinksocket_i, "Unable to find connection data for removal");
+	// Remove from the current connections
+	if (oldValue != NULL){
+		for (std::vector<Connection_struct>::const_iterator i = oldValue->begin(); i != oldValue->end(); ++i) {
+			// If the value exists in the old property but not in the duplicate
+			// free version, it has been removed
+			if (find(duplicateFree.begin(), duplicateFree.end(), *i) == duplicateFree.end()) {
+				std::vector<InternalConnection *>::iterator found = find(internalConnections.begin(), internalConnections.end(), *i);
+
+				// If found, delete and remove the entry
+				if (found != internalConnections.end()) {
+					delete *found;
+					internalConnections.erase(found);
+				} else {
+					LOG_ERROR(sinksocket_i, "Unable to find connection data for removal");
+				}
 			}
 		}
 	}
-
-	ConnectionStats = stats;
 }
 
 int sinksocket_i::serviceFunction()

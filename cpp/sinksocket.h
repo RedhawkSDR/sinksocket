@@ -34,6 +34,7 @@ class sinksocket_i : public sinksocket_base
 	ENABLE_LOGGING
 public:
 	sinksocket_i(const char *uuid, const char *label);
+    void constructor();
 	~sinksocket_i();
 	int serviceFunction();
 	template<typename T>
