@@ -28,7 +28,7 @@ Prefix:         %{_prefix}
 %define _infodir       %{_prefix}/info
 
 Name:           rh.sinksocket
-Version:        2.0.1
+Version:        2.0.2
 Release:        1%{?dist}
 Summary:        Component %{name}
 
