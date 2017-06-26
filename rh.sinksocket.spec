@@ -89,3 +89,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_prefix}/dom/components/rh/sinksocket/sinksocket.spd.xml
 %{_prefix}/dom/components/rh/sinksocket/cpp
 
+%changelog
+* Wed Jun 21 2017 Ryan Bauman <rbauman@lgsinnovations.com> - 2.0.1-2
+- Mass rebuild for REDHAWK 2.1.1
+
