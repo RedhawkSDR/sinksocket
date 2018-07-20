@@ -29,7 +29,7 @@ Prefix:         %{_prefix}
 
 Name:           rh.sinksocket
 Version:        2.0.1
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Component %{name}
 
 Group:          REDHAWK/Components
